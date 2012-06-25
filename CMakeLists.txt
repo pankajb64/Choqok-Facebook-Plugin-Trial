@@ -13,6 +13,12 @@ option(QTINDICATE_DISABLE "Disable support for notifications via indicator")
 find_package(QJson REQUIRED)
 find_package(QCA2 REQUIRED)
 find_package(QtOAuth REQUIRED)
+find_package(KdepimLibs REQUIRED)
+option(KDEPIM_44_COMPAT "Don't crash when using KDEPIM runtime 4.4.x, at the cost of using deprecated KCal API" TRUE)
+if(KDEPIM_44_COMPAT)
+  add_definitions(-DWANT_DEPRECATED_KCAL_API)
+endif(KDEPIM_44_COMPAT)
+
 
 if(NOT QTINDICATE_DISABLE)
     find_package(QtIndicate)

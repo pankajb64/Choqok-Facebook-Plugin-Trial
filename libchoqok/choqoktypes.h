@@ -1,7 +1,7 @@
 /*
     This file is part of Choqok, the KDE micro-blogging client
 
-    Copyright (C) 2008-2012 Mehrdad Momeny <mehrdad.momeny@gmail.com>
+    Copyright (C) 2008-2011 Mehrdad Momeny <mehrdad.momeny@gmail.com>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License as
@@ -42,7 +42,6 @@ public:
     User()
     :isProtected(false)
     {}
-    virtual ~User() {}
     ChoqokId userId;
     QString realName;
     QString userName;
@@ -59,9 +58,9 @@ public:
     Post()
     :isFavorited(false), isPrivate(false), isError(false), isRead(false)
     {}
-    virtual ~Post() {}
     QDateTime creationDateTime;
     ChoqokId postId;
+    QString title;
     QString link;
     QString content;
     QString source;
@@ -76,7 +75,6 @@ public:
     bool isRead;
     QString repeatedFromUsername;
     ChoqokId repeatedPostId;
-    ChoqokId conversationId;
 };
 /**
 Describe an specific timeline, Should use by @ref MicroBlog
