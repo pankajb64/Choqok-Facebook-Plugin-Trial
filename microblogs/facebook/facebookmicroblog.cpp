@@ -36,7 +36,7 @@
 #include "postwidget.h"
 #include "facebookpostwidget.h"
 #include <application.h>
-
+#include "facebookutil.h"
 
 K_PLUGIN_FACTORY( MyPluginFactory, registerPlugin < FacebookMicroBlog > (); )
 K_EXPORT_PLUGIN( MyPluginFactory( "choqok_facebook" ) )
@@ -53,7 +53,7 @@ FacebookMicroBlog::~FacebookMicroBlog()
 
 Choqok::UI::PostWidget* FacebookMicroBlog::createPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent)
 {
-    return new Choqok::UI::PostWidget(account, post, parent);
+    return new FacebookPostWidget(account, post, parent);
 }
 
 void FacebookMicroBlog::createPost(Choqok::Account* theAccount, Choqok::Post* post) 
@@ -153,24 +153,35 @@ QList< Choqok::Post* > FacebookMicroBlog::loadTimeline(Choqok::Account* account,
     qSort(groupList);
     int count = groupList.count();
     if( count ) {
-        Choqok::Post *st = 0;
+        FacebookPost *st = 0;
         for ( int i = 0; i < count; ++i ) {
-            st = new Choqok::Post;
+            st = new FacebookPost;
             KConfigGroup grp( &postsBackup, groupList[i].toString() );
             st->creationDateTime = grp.readEntry( "creationDateTime", QDateTime::currentDateTime() );
-	    st->postId = grp.readEntry( "postId", QString() );
+			st->postId = grp.readEntry( "postId", QString() );
             st->replyToPostId = grp.readEntry( "inReplyToPostId", QString() );
             st->title = grp.readEntry( "title", QString() );
             st->source = grp.readEntry( "source", QString() );
             st->link = grp.readEntry( "link", QString() );
             st->content = grp.readEntry( "text", QString() );
-	    st->type = grp.readEntry( "type", QString() );
-	    st->replyToUserId = grp.readEntry( "replyToUserId", QString() );
-
+			st->type = grp.readEntry( "type", QString() );
+			st->replyToUserId = grp.readEntry( "replyToUserId", QString() );
             st->author.userId = grp.readEntry( "authorId", QString() );
             st->author.realName = grp.readEntry( "authorRealName", QString() );
             st->author.profileImageUrl = grp.readEntry( "profileImageUrl", QString() );
-            //st->isRead = grp.readEntry("isRead", true);
+            st->caption = grp.readEntry( "caption", QString() );
+            st->description = grp.readEntry( "description", QString() );
+            st->iconUrl = grp.readEntry( "iconUrl", QString() );            
+            //st->properties = grp.readEntry( "properties", QList<PropertyInfoPtr>() );            
+            st->likeCount = grp.readEntry( "likeCount", QString() );
+            st->story = grp.readEntry( "story", QString() );
+            st->commentCount = grp.readEntry( "commentCount", QString() );
+            st->appName = grp.readEntry( "appName", QString() );                        
+            st->appId = grp.readEntry( "appId", QString() );                                    
+            st->updateDateTime = grp.readEntry( "updateDateTime", QDateTime::currentDateTime() );            
+            st->isRead = grp.readEntry("isRead", true);
+            st->conversationId = grp.readEntry("conversationId", QString());
+			//Choqok::Post* post = *st;
 
             list.append( st );
         }
@@ -195,7 +206,7 @@ void FacebookMicroBlog::saveTimeline(Choqok::Account* account, const QString& ti
     }
     QList< Choqok::UI::PostWidget *>::const_iterator it, endIt = timeline.constEnd();
     for ( it = timeline.constBegin(); it != endIt; ++it ) {
-        const Choqok::Post *post = ((*it)->currentPost());
+        FacebookPost *post = static_cast<FacebookPost*>((*it)->currentPost());
         KConfigGroup grp( &postsBackup, post->creationDateTime.toString() );
         grp.writeEntry( "creationDateTime", post->creationDateTime );
         grp.writeEntry( "postId", post->postId.toString() );
@@ -203,13 +214,23 @@ void FacebookMicroBlog::saveTimeline(Choqok::Account* account, const QString& ti
         grp.writeEntry( "source", post->source );
         grp.writeEntry( "link", post->link );
         grp.writeEntry( "text", post->content );
-	grp.writeEntry( "type", post->type );
-	grp.writeEntry( "replyToUserId", post->replyToUserId.toString() );
+		grp.writeEntry( "type", post->type );
+		grp.writeEntry( "replyToUserId", post->replyToUserId.toString() );
         grp.writeEntry( "inReplyToPostId", post->replyToPostId.toString() );
         grp.writeEntry( "authorId", post->author.userId.toString() );
         grp.writeEntry( "authorRealName", post->author.realName );
-	grp.writeEntry( "profileImageUrl", post->author.profileImageUrl );
-        //grp.writeEntry( "isRead" , post->isRead );
+		grp.writeEntry( "profileImageUrl", post->author.profileImageUrl );
+        grp.writeEntry( "isRead" , post->isRead );
+        grp.writeEntry( "conversationId", post->conversationId.toString() );
+        grp.writeEntry( "caption", post->caption ); 
+        grp.writeEntry( "description", post->description );
+        grp.writeEntry( "iconUrl", post->iconUrl );
+        grp.writeEntry( "likecount", post->likeCount );
+        grp.writeEntry( "story", post->story );
+        grp.writeEntry( "commentcount", post->commentCount );
+        grp.writeEntry( "appName", post->appName );
+        grp.writeEntry( "appId", post->appId.toString() );
+        grp.writeEntry( "updateDateTime", post->updateDateTime );
     }
     postsBackup.sync();
 	if(Choqok::Application::isShuttingDown())
@@ -310,26 +331,27 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
   {
 	  PostInfo * postInfo = p.data();
 	  FacebookPost * post = new FacebookPost ();
-	  post->postId = postInfo->id();
+	  post->postId = assignOrNull(postInfo->id());
 	  post->author = toChoqokUser(postInfo->from());
-	  post->author.profileImageUrl = postInfo->pictureUrl();
-	  post->content = postInfo->message();
-	  post->link = postInfo->link();
-	  post->title = postInfo->name();
-	  post->caption = postInfo->caption();
-	  post->description = postInfo->description();
-	  post->iconUrl = postInfo->icon();
-	  post->properties = postInfo->properties();
-	  post->type = postInfo->type();
-	  post->source = postInfo->source();
-	  post->likes = postInfo->likes();
-	  post->story = postInfo->story();
-	  post->comments = postInfo->comments();
-	  post->application = postInfo->application();
+	  post->author.profileImageUrl = assignOrNull(postInfo->pictureUrl());
+	  post->content = assignOrNull(postInfo->message());
+	  post->link = assignOrNull(postInfo->link());
+	  post->title = assignOrNull(postInfo->name());
+	  post->caption = assignOrNull(postInfo->caption());
+	  post->description = assignOrNull(postInfo->description());
+	  post->iconUrl = assignOrNull(postInfo->icon());
+	  //post->properties = postInfo->properties();
+	  post->type = assignOrNull(postInfo->type());
+	  post->source = assignOrNull(postInfo->source());
+	  post->likeCount = postInfo->likes().isNull() ?  -1 : postInfo->likes()->count();
+	  post->story = assignOrNull(postInfo->story());
+	  post->commentCount = postInfo->comments().isNull() ?  -1 : postInfo->comments()->count();
+	  post->appId = postInfo->application().isNull() ?  "" : postInfo->application()->id();
+	  post->appName = postInfo->application().isNull() ?  "" : postInfo->application()->name();
 	  post->creationDateTime = postInfo->createdTime().dateTime();
 	  post->updateDateTime = postInfo->updatedTime().dateTime();
   
-      post->content = prepareStatus(post);
+      //post->content = prepareStatus(post);
       
 	  list.append(post);
   }
@@ -347,7 +369,7 @@ Choqok::User FacebookMicroBlog::toChoqokUser(UserInfoPtr userInfo) const
 	
 	return *user;
 }
-
+/*
 QString FacebookMicroBlog::prepareStatus(const FacebookPost * post) const
 {
 	QString content = post->content; 
@@ -365,5 +387,5 @@ QString FacebookMicroBlog::prepareStatus(const FacebookPost * post) const
 	QString status = post->content + " <br/> <a href = \"" + post->link + " \"> <h2>" + post->title + "</h2> <br/> <h3>" + post->caption + "</h3> </a><br/> " + post->description + " <br/> ( Post Type - "  + post->type + " ) <br/> "  + post->story;
 	
 	return status;
-}
+}*/
 #include "facebookmicroblog.moc"

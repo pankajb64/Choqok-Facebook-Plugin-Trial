@@ -21,35 +21,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/
 */
 
-#ifndef FACEBOOKPOST_H
-#define FACEBOOKPOST_H
+#ifndef FACEBOOKUTIL_H
+#define FACEBOOKUTIL_H
 
-#include <kfacebook/postinfo.h>
-#include <choqoktypes.h>
+#include<QString>
 
-class FacebookPost : public Choqok::Post
+QString assignOrNull(QString s)
 {
-	
-	public :
-	
-	FacebookPost() {}
-	~FacebookPost() {}
-	//FacebookPost(Choqok::Post post) : Choqok::Post::Post() {}
-	QString title;
-	QString caption;
-	QString description;
-	QString iconUrl;
-	//QList<PropertyInfoPtr> properties;
-	QString likeCount;
-	//LikeInfoPtr likes;
-	QString story;
-	QString commentCount;
-	//CommentInfoPtr comments;
-	QString appName;
-	ChoqokId appId;
-	QDateTime updateDateTime;
-	
-	//PostInfoPtr post;
-};
-
+	return s.isNull() ? "" : s;
+}
 #endif

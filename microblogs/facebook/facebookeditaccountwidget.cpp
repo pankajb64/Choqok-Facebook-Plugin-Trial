@@ -51,7 +51,7 @@ FacebookEditAccountWidget::FacebookEditAccountWidget(FacebookMicroBlog *microblo
    if(mAccount) {
         kcfg_alias->setText( mAccount->alias() );
         if(mAccount->accessToken().isEmpty() ) {
-          kDebug() << "Account exists, but there aint an accessToken. ????!!!! " << account ;  
+          kDebug() << "Account exists, but there aint an accessToken. :S ?! " << account ;  
 	  setAuthenticated(false);
         } else {
 	  kDebug() << "Account exists with  an accessToken. :) :D " << account;  

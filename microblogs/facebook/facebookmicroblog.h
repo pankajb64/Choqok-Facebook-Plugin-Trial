@@ -56,7 +56,7 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual Choqok::User toChoqokUser(UserInfoPtr userInfo) const;
     virtual QString profileUrl(Choqok::Account* account, const QString& username) const;
     virtual QString postUrl(Choqok::Account* account, const QString& username, const QString& postId) const;
-    virtual QString prepareStatus(const FacebookPost * post) const;
+    //virtual QString prepareStatus(const FacebookPost * post) const;
 
   /*Q_SIGNALS:
     virtual void timelineDataReceived(Choqok::Account *theAccount, const QString &timelineName, QList<Choqok::Post*> data );*/

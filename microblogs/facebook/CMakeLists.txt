@@ -13,7 +13,7 @@ IF(KFacebook_FOUND)
     facebookaccount.cpp
     facebookmicroblog.cpp
     facebookeditaccountwidget.cpp
-    #facebookpostwidget.cpp
+    facebookpostwidget.cpp
     )
 
     kde4_add_ui_files(choqok_facebook_SRCS

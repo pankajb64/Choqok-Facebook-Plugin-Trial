@@ -37,10 +37,13 @@
 class FacebookPostWidget : public Choqok::UI::PostWidget {
 
     public:
-    FacebookPostWidget(Choqok::Account* account, const Choqok::Post& post, QWidget* parent = 0);
+    FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent = 0);
     protected:	
     virtual QString generateSign ();
     virtual QString prepareStatus( const QString &txt );
-    QString prepareAdditionalContents (const QString& status);
+    
+    private:
+    
+    QString prepareLink (QString& link, QString& title, QString& caption, QString& description ) const;
 };
 #endif

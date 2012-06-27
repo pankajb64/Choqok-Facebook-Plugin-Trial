@@ -23,7 +23,7 @@
 
 #include "facebookpostwidget.h"
 
-FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, const Choqok::Post& post, QWidget* parent): PostWidget(account, post, parent)
+FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
 
 }
@@ -31,19 +31,22 @@ FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, const Choqok::P
 QString FacebookPostWidget::generateSign ()
 {
     QString ss = "";
-    /*
-    ss = "<b><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), currentPost().author.userId ) 
+ 
+    
+    ss = "<i><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), currentPost()->author.userId ) 
 		 +      +"' title=\"" +
-    currentPost().author.realName + "\">" ;
+    currentPost()->author.realName + "\">" ;
 		
-		 if (currentPost().author.realName.isEmpty())
+		 if (currentPost()->author.realName.isEmpty())
 			ss += "Anonymous";
 		else
-			ss += currentPost().author.realName;
-		 	ss += "</a> - </b>";
+			ss += currentPost()->author.realName;
+		 	ss += "</a> - </i>";
 
-    ss += "<a href=\""
-	 + currentPost().link
+    QStringList list = currentPost()->postId.split("_");
+    
+    ss += "<a href=\"http://www.facebook.com/" + list[0] + "/posts/" + list[1]
+	 
 	 + "\" title=\""
 	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";
 
@@ -62,35 +65,22 @@ QString FacebookPostWidget::generateSign ()
 
 QString FacebookPostWidget::prepareStatus( const QString &txt ) 
 {
+	FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+	
+	QString content = Choqok::UI::PostWidget::prepareStatus(post->content); 
+	QString title = Choqok::UI::PostWidget::prepareStatus(post->title);
+	QString caption = Choqok::UI::PostWidget::prepareStatus(post->caption);
+	QString description = Choqok::UI::PostWidget::prepareStatus(post->description);
+	QString story = Choqok::UI::PostWidget::prepareStatus(post->story);
+	QString link = Choqok::UI::PostWidget::prepareStatus(post->link);
+	QString status = story + " <br/> " +  prepareLink(link, title, caption, description) + "<br/> <br/>" + content;
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
    
    return txt;
 }
 
-QString FacebookPostWidget::prepareAdditionalContents(const QString& status) 
+QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& caption, QString& description) const
 {
-  
-  /*QString newStatus;
-  if(currentPost().type != "status" )
-  {
-    newStatus = currentPost().content +  "-<a href='" + currentPost().link + "'>" +  currentPost().title + "</a>-"  +  status;
-  }
-  else
-  {
-    newStatus = status;
-  }
-  
-  return newStatus;*/
-  
-  return status;
+	QString linkHtml = "<a href = \"" + link + "\"> <b> " + title + " </b><br/> " + caption + "</a><br/> " + description;   
+	return linkHtml;
 }
-
-
-
-
-
-
-
-
-
-

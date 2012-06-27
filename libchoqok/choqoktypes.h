@@ -54,13 +54,16 @@ public:
 };
 
 class CHOQOK_EXPORT Post {
-public:
+
+
+	public:
+	
     Post()
     :isFavorited(false), isPrivate(false), isError(false), isRead(false)
     {}
+    ~Post() {}
     QDateTime creationDateTime;
     ChoqokId postId;
-    QString title;
     QString link;
     QString content;
     QString source;
@@ -75,6 +78,7 @@ public:
     bool isRead;
     QString repeatedFromUsername;
     ChoqokId repeatedPostId;
+    ChoqokId conversationId;
 };
 /**
 Describe an specific timeline, Should use by @ref MicroBlog
