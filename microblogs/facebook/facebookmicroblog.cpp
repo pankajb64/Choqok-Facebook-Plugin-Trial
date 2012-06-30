@@ -333,13 +333,13 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  FacebookPost * post = new FacebookPost ();
 	  post->postId = assignOrNull(postInfo->id());
 	  post->author = toChoqokUser(postInfo->from());
-	  post->author.profileImageUrl = assignOrNull(postInfo->pictureUrl());
+	  post->author.profileImageUrl = "https://graph.facebook.com/" + postInfo->from()->id() + "/picture" ; 
 	  post->content = assignOrNull(postInfo->message());
 	  post->link = assignOrNull(postInfo->link());
 	  post->title = assignOrNull(postInfo->name());
 	  post->caption = assignOrNull(postInfo->caption());
 	  post->description = assignOrNull(postInfo->description());
-	  post->iconUrl = assignOrNull(postInfo->icon());
+	  post->iconUrl = assignOrNull(postInfo->pictureUrl()); //assignOrNull(postInfo->icon());
 	  //post->properties = postInfo->properties();
 	  post->type = assignOrNull(postInfo->type());
 	  post->source = assignOrNull(postInfo->source());

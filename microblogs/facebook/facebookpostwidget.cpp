@@ -30,35 +30,37 @@ FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* p
 
 QString FacebookPostWidget::generateSign ()
 {
+	FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+	
     QString ss = "";
  
     
-    ss = "<i><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), currentPost()->author.userId ) 
+    ss = "<i><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), post->author.userId ) 
 		 +      +"' title=\"" +
-    currentPost()->author.realName + "\">" ;
+    post->author.realName + "\">" ;
 		
-		 if (currentPost()->author.realName.isEmpty())
+		 if (post->author.realName.isEmpty())
 			ss += "Anonymous";
 		else
-			ss += currentPost()->author.realName;
-		 	ss += "</a> - </i>";
+			ss += post->author.realName;
+		ss += "</a> - </i> via";
 
-    QStringList list = currentPost()->postId.split("_");
+    //QStringList list = currentPost()->postId.split("_");
     
-    ss += "<a href=\"http://www.facebook.com/" + list[0] + "/posts/" + list[1]
+    /*ss += "<a href=\"http://www.facebook.com/" + list[0] + "/posts/" + list[1]
 	 
 	 + "\" title=\""
-	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";
-
-    if( !currentPost().source.isNull() && !currentPost().replyToUserId.isEmpty())
-        ss += " - <a href=\"http://www.facebook.com/apps/application.php?id=" + currentPost().replyToUserId + "\">" + currentPost().source + "</a>";
+	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";*/
+    
+    if( !post->appId.isEmpty())
+        ss += " <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a>";
     else
-	ss += " - web";	
+	    ss += " web";	
 
     ss += " <a href='"
-	 + currentAccount()->microblog()->postUrl(currentAccount(), currentPost().author.userName, currentPost().postId)
+	 + currentAccount()->microblog()->postUrl(currentAccount(), post->author.userName, post->postId)
  	 + "'>"
-	 + "<b>(Link to Post)</b></a>";	*/
+	 + "<b>" + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "</b></a>";	
     return ss;
 
 }
@@ -73,14 +75,17 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	QString description = Choqok::UI::PostWidget::prepareStatus(post->description);
 	QString story = Choqok::UI::PostWidget::prepareStatus(post->story);
 	QString link = Choqok::UI::PostWidget::prepareStatus(post->link);
-	QString status = story + " <br/> " +  prepareLink(link, title, caption, description) + "<br/> <br/>" + content;
+	QString status = story + " <br/> " +  prepareLink(link, title, caption, description) + "<br/> <br/>" + content  + "<br/>(Type - " + post->type + " )<br/>";
+	if (!post->iconUrl.isEmpty())
+	  status += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(link).arg(post->iconUrl);
+	  
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
    
-   return txt;
+   return status;
 }
 
 QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& caption, QString& description) const
 {
-	QString linkHtml = "<a href = \"" + link + "\"> <b> " + title + " </b><br/> " + caption + "</a><br/> " + description;   
+	QString linkHtml = QString("<a href =\"%1\" > <b> %2 </b> <br/> %3 </a> <br/> %4 ").arg(link).arg(title).arg(caption).arg(description);
 	return linkHtml;
 }
