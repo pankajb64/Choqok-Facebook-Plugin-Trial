@@ -26,6 +26,8 @@ along with this program; if not, see http://www.gnu.org/licenses/
 
 #include <timelinewidget.h>
 
+using namespace KFacebook;
+
 class FacebookTimelineWidget : public Choqok::UI::TimelineWidget
 {
 	Q_OBJECT

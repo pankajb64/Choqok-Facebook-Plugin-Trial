@@ -27,6 +27,8 @@ along with this program; if not, see http://www.gnu.org/licenses/
 #include "microblogwidget.h"
 #include <kfacebook/postinfo.h>
 
+using namespace KFacebook;
+
 class FacebookMicroBlogWidget : public Choqok::UI::MicroBlogWidget
 {
 	Q_OBJECT

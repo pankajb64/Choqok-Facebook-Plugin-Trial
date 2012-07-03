@@ -26,6 +26,8 @@
 #include <postwidget.h>
 #include "facebookpost.h"
 
+using namespace KFacebook;
+
 /*namespace Choqok
 {
   namespace UI
