@@ -22,6 +22,7 @@
 */
 
 #include "facebookpostwidget.h"
+#include <KDebug>
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
@@ -68,24 +69,53 @@ QString FacebookPostWidget::generateSign ()
 QString FacebookPostWidget::prepareStatus( const QString &txt ) 
 {
 	FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+
+    kDebug()<<"content: " << post->content;
+    kDebug()<<"title: " << post->title;
+    kDebug()<<"caption: " << post->caption;
+    kDebug()<<"description: " << post->description;
+    kDebug()<<"story: " << post->story;
+    kDebug()<<"link: " << post->link;
 	
 	QString content = Choqok::UI::PostWidget::prepareStatus(post->content); 
-	QString title = Choqok::UI::PostWidget::prepareStatus(post->title);
-	QString caption = Choqok::UI::PostWidget::prepareStatus(post->caption);
+	QString title = /*Choqok::UI::PostWidget::prepareStatus*/(post->title);
+	QString caption = /*Choqok::UI::PostWidget::prepareStatus*/(post->caption);
 	QString description = Choqok::UI::PostWidget::prepareStatus(post->description);
 	QString story = Choqok::UI::PostWidget::prepareStatus(post->story);
-	QString link = Choqok::UI::PostWidget::prepareStatus(post->link);
-	QString status = story + " <br/> " +  prepareLink(link, title, caption, description) + "<br/> <br/>" + content  + "<br/>(Type - " + post->type + " )<br/>";
-	if (!post->iconUrl.isEmpty())
+	QString link = /*Choqok::UI::PostWidget::prepareStatus*/(post->link);
+    QString status;
+    if( !story.isEmpty() )
+        status += story + " <br/> ";
+    if( !link.isEmpty() )
+        status += prepareLink(link, title, caption, description);
+    if( !content.isEmpty() )
+        status += "<br/>" + content;
+
+    /* You cannot show an image this way in a QTextBrowser
+     * You need to download it first, via Choqok::MediaManager and then add it as a resource
+     * just like what we did in Image preview plugin.
+     * I put the false in if, to prevent it to show for now*/
+	if (false && !post->iconUrl.isEmpty())
 	  status += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(link).arg(post->iconUrl);
 	  
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
-   
+   kDebug()<< status;
    return status;
 }
 
 QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& caption, QString& description) const
 {
-	QString linkHtml = QString("<a href =\"%1\" > <b> %2 </b> <br/> %3 </a> <br/> %4 ").arg(link).arg(title).arg(caption).arg(description);
+    if( title.isEmpty() )
+        if( !caption.isEmpty() ){
+            title = caption;
+            caption.clear();
+        } else {
+            title = "Link";
+        }
+	QString linkHtml = QString("<a href =\"%1\" ><b> %2 </b></a>").arg(link).arg(title);
+    if( !caption.isEmpty() )
+        linkHtml.append( QString("<br/>%1").arg(caption) );
+    if( !description.isEmpty() )
+        linkHtml.append(QString("<br/>%1").arg(description));
 	return linkHtml;
 }
