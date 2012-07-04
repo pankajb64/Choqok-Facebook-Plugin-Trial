@@ -23,6 +23,7 @@
 
 #include "facebookpostwidget.h"
 #include <KDebug>
+#include <KLocalizedString>
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
@@ -87,9 +88,9 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
     if( !story.isEmpty() )
         status += story + " <br/> ";
     if( !link.isEmpty() )
-        status += prepareLink(link, title, caption, description);
+        status += prepareLink(link, title, caption, description) + "<br/>";
     if( !content.isEmpty() )
-        status += "<br/>" + content;
+        status += content;
 
     /* You cannot show an image this way in a QTextBrowser
      * You need to download it first, via Choqok::MediaManager and then add it as a resource
@@ -110,11 +111,12 @@ QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& 
             title = caption;
             caption.clear();
         } else {
-            title = "Link";
+            title = i18n("Link");
         }
-	QString linkHtml = QString("<a href =\"%1\" ><b> %2 </b></a>").arg(link).arg(title);
+    QString link_title = link;
     if( !caption.isEmpty() )
-        linkHtml.append( QString("<br/>%1").arg(caption) );
+        link_title = caption;
+	QString linkHtml = QString("<a href =\"%1\" title='%3' ><b> %2 </b></a>").arg(link).arg(title).arg(link_title);
     if( !description.isEmpty() )
         linkHtml.append(QString("<br/>%1").arg(description));
 	return linkHtml;
