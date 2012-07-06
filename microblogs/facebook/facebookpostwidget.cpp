@@ -88,7 +88,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
     if( !story.isEmpty() )
         status += story + " <br/> ";
     if( !link.isEmpty() )
-        status += prepareLink(link, title, caption, description) + "<br/>";
+        status += prepareLink(link, title, caption, description, post->type) + "<br/>";
     if( !content.isEmpty() )
         status += content;
 
@@ -104,15 +104,17 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
    return status;
 }
 
-QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& caption, QString& description) const
+QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& caption, QString& description, QString& type) const
 {
     if( title.isEmpty() )
+    {
         if( !caption.isEmpty() ){
             title = caption;
             caption.clear();
         } else {
-            title = i18n("Link");
+            title = type;
         }
+    }    
     QString link_title = link;
     if( !caption.isEmpty() )
         link_title = caption;
