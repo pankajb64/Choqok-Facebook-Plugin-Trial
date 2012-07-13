@@ -38,11 +38,19 @@ using namespace KFacebook;
 
 class FacebookPostWidget : public Choqok::UI::PostWidget {
 
+    Q_OBJECT
+    
     public:
     FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent = 0);
     protected:	
     virtual QString generateSign ();
     virtual QString prepareStatus( const QString &txt );
+    
+    protected slots:
+    void slotImageFetched(QString& remoteUrl, QPixmap& pixmap) const;
+    
+    protected:
+    void downloadImage(QString& linkUrl) const;  
     
     private:
     

@@ -24,6 +24,9 @@
 #include "facebookpostwidget.h"
 #include <KDebug>
 #include <KLocalizedString>
+#include <KUrl>
+#include <mediamanager.h>
+#include <textbrowser.h>
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
@@ -96,8 +99,9 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
      * You need to download it first, via Choqok::MediaManager and then add it as a resource
      * just like what we did in Image preview plugin.
      * I put the false in if, to prevent it to show for now*/
-	if (false && !post->iconUrl.isEmpty())
-	  status += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(link).arg(post->iconUrl);
+	if (!post->iconUrl.isEmpty())
+	  downloadImage(post->iconUrl);
+
 	  
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
    kDebug()<< status;
@@ -122,4 +126,34 @@ QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& 
     if( !description.isEmpty() )
         linkHtml.append(QString("<br/>%1").arg(description));
 	return linkHtml;
+}
+
+void FacebookPostWidget::downloadImage(QString& linkUrl) const
+{
+	connect ( Choqok::MediaManager::self(), SIGNAL(imageFetched(QString, QPixmap)), SLOT(slotImageFetched(QString, QPixmap)) );
+	
+	Choqok::MediaManager::self()->fetchImage(linkUrl, Choqok::MediaManager::Async) ;
+}
+
+void FacebookPostWidget::slotImageFetched(QString& linkUrl, QPixmap& pixmap) const
+{
+	KUrl imgU(linkUrl);
+	imgU.setScheme("img");
+	QString imgUrl = imgU.prettyUrl();
+	
+	QPixmap pix = pixmap;
+	
+	if ( pixmap.width() > 200 )
+	    pix = pixmap.scaledToWidth(200);
+    else if ( pixmap.height() > 200 )
+        pix = pixmap.scaledToHeight(200);
+   
+   Choqok::UI::PostWidget::mainWidget()->document()->addResource(QTextDocument::ImageResource, imgUrl, pix);
+   
+   QString content = Choqok::UI::PostWidget::content();
+   
+   content += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(linkUrl).arg(imgUrl);
+   
+   Choqok::UI::PostWidget::setContent(content);
+           
 }

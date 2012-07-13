@@ -86,7 +86,7 @@ public:
 
     After changing current post, Don't forget to call @ref initUi() to update post UI.
     */
-    void setCurrentPost( Post *post );
+    void setCurrentPost( Post *post ) ;
 
     /**
     @brief Sets Post sign
@@ -104,7 +104,7 @@ public:
     @brief Sets post content
     Post content is an html text that showed as post text.
     */
-    void setContent( const QString &content );
+    void setContent( const QString &content ) const;
 
     /**
     @return post content
@@ -114,7 +114,7 @@ public:
 
     void deleteLater();
 
-    TextBrowser * mainWidget();
+    TextBrowser * mainWidget() const;
 
     QStringList urls();
 
@@ -166,7 +166,7 @@ protected Q_SLOTS:
     /**
     Update UI after changes, such as timestamp
     */
-    virtual void updateUi();
+    virtual void updateUi() const;
 
     /**
     Call microblog() to remove this post!
@@ -199,8 +199,8 @@ protected:
     virtual QString prepareStatus( const QString &text );
     virtual void setDirection();
     virtual QString generateSign();
-    virtual QString formatDateTime( const QDateTime &time );
-    virtual QString formatDateTime( const KDateTime &time );
+    virtual QString formatDateTime( const QDateTime &time ) const;
+    virtual QString formatDateTime( const KDateTime &time )const;
     /**
     @brief Create and Add a new button to widget
     This function will add button to UI!
