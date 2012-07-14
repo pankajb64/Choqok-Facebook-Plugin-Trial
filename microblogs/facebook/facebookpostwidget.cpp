@@ -27,6 +27,7 @@
 #include <KUrl>
 #include <mediamanager.h>
 #include <textbrowser.h>
+#include "facebookutil.h"
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
@@ -40,7 +41,7 @@ QString FacebookPostWidget::generateSign ()
     QString ss = "";
  
     
-    ss = "<i><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), post->author.userId ) 
+    ss = "<b><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), post->author.userId ) 
 		 +      +"' title=\"" +
     post->author.realName + "\">" ;
 		
@@ -48,7 +49,7 @@ QString FacebookPostWidget::generateSign ()
 			ss += "Anonymous";
 		else
 			ss += post->author.realName;
-		ss += "</a> - </i> via";
+		ss += "</a> - </b> via";
 
     //QStringList list = currentPost()->postId.split("_");
     
@@ -58,14 +59,14 @@ QString FacebookPostWidget::generateSign ()
 	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";*/
     
     if( !post->appId.isEmpty())
-        ss += " <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a>";
+        ss += " <b> <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a></b>";
     else
-	    ss += " web";	
+	    ss += " <b>web</b> ";	
 
-    ss += " <a href='"
+    ss += " on <a href='"
 	 + currentAccount()->microblog()->postUrl(currentAccount(), post->author.userName, post->postId)
  	 + "'>"
-	 + "<b>" + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "</b></a>";	
+	 + "" + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "</a>";	
     return ss;
 
 }
@@ -100,7 +101,11 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
      * just like what we did in Image preview plugin.
      * I put the false in if, to prevent it to show for now*/
 	if (!post->iconUrl.isEmpty())
-	  downloadImage(post->iconUrl);
+	{
+      downloadImage(post->iconUrl);
+      QString imgUrl = getImageUrl(post->iconUrl);
+      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(post->iconUrl).arg(imgUrl);
+    }
 
 	  
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
@@ -135,11 +140,10 @@ void FacebookPostWidget::downloadImage(QString& linkUrl) const
 	Choqok::MediaManager::self()->fetchImage(linkUrl, Choqok::MediaManager::Async) ;
 }
 
-void FacebookPostWidget::slotImageFetched(QString& linkUrl, QPixmap& pixmap) const
+void FacebookPostWidget::slotImageFetched(const QString& linkUrl, const QPixmap& pixmap)
 {
-	KUrl imgU(linkUrl);
-	imgU.setScheme("img");
-	QString imgUrl = imgU.prettyUrl();
+	
+	QString imgUrl = getImageUrl(linkUrl);
 	
 	QPixmap pix = pixmap;
 	
@@ -150,10 +154,13 @@ void FacebookPostWidget::slotImageFetched(QString& linkUrl, QPixmap& pixmap) con
    
    Choqok::UI::PostWidget::mainWidget()->document()->addResource(QTextDocument::ImageResource, imgUrl, pix);
    
-   QString content = Choqok::UI::PostWidget::content();
+   /*QString content = currentPost()->content;
    
    content += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(linkUrl).arg(imgUrl);
    
-   Choqok::UI::PostWidget::setContent(content);
-           
+   currentPost()->content = content;
+   
+   Choqok::UI::PostWidget::updateUi();       */ 
 }
+
+

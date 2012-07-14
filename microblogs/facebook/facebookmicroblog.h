@@ -29,6 +29,7 @@
 #include <kfacebook/userinfo.h>
 #include "facebookpost.h"
 
+
 using namespace KFacebook;
 
 class FacebookAccount;

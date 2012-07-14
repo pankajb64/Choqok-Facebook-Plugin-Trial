@@ -104,7 +104,7 @@ public:
     @brief Sets post content
     Post content is an html text that showed as post text.
     */
-    void setContent( const QString &content ) const;
+    void setContent( const QString &content );
 
     /**
     @return post content
@@ -114,7 +114,7 @@ public:
 
     void deleteLater();
 
-    TextBrowser * mainWidget() const;
+    TextBrowser * mainWidget() ;
 
     QStringList urls();
 
@@ -166,7 +166,7 @@ protected Q_SLOTS:
     /**
     Update UI after changes, such as timestamp
     */
-    virtual void updateUi() const;
+    virtual void updateUi();
 
     /**
     Call microblog() to remove this post!
@@ -199,8 +199,8 @@ protected:
     virtual QString prepareStatus( const QString &text );
     virtual void setDirection();
     virtual QString generateSign();
-    virtual QString formatDateTime( const QDateTime &time ) const;
-    virtual QString formatDateTime( const KDateTime &time )const;
+    virtual QString formatDateTime( const QDateTime &time ) ;
+    virtual QString formatDateTime( const KDateTime &time );
     /**
     @brief Create and Add a new button to widget
     This function will add button to UI!

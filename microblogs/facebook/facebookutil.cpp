@@ -21,13 +21,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/
 */
 
-#ifndef FACEBOOKUTIL_H
-#define FACEBOOKUTIL_H
+#include "facebookutil.h"
+#include <KUrl>
 
-#include<QString>
+QString assignOrNull(QString s)
+{
+	return s.isNull() ? "" : s;
+}
 
-QString assignOrNull(QString s);
-
-QString getImageUrl(const QString& linkUrl);
-
-#endif
+QString getImageUrl(const QString& linkUrl)
+{
+	KUrl imgU(linkUrl);
+	imgU.setScheme("img");
+	QString imgUrl = imgU.prettyUrl();
+	
+	return imgUrl;
+}

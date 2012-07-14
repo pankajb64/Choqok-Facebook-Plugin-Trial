@@ -217,7 +217,7 @@ void PostWidget::initUi()
     updateUi();
 }
 
-void PostWidget::updateUi() const
+void PostWidget::updateUi() 
 {
     _mainWidget->setHtml(baseText->arg( d->mImage, d->mContent,
                                         d->mSign.arg(formatDateTime( d->mCurrentPost->creationDateTime )),
@@ -409,12 +409,12 @@ void PostWidget::setDirection()
     }
 }
 
-QString PostWidget::formatDateTime(const KDateTime& time) const
+QString PostWidget::formatDateTime(const KDateTime& time)
 {
     return formatDateTime(time.dateTime());
 }
 
-QString PostWidget::formatDateTime( const QDateTime& time ) const
+QString PostWidget::formatDateTime( const QDateTime& time )
 {
     int seconds = time.secsTo( QDateTime::currentDateTime() );
     if ( seconds <= 15 ) {
@@ -559,7 +559,7 @@ QString PostWidget::content() const
     return d->mContent;
 }
 
-void PostWidget::setContent(const QString& content) const
+void PostWidget::setContent(const QString& content)
 {
     d->mContent = content;
     updateUi();
@@ -586,7 +586,7 @@ void PostWidget::deleteLater()
     close();
 }
 
-TextBrowser* PostWidget::mainWidget() const
+TextBrowser* PostWidget::mainWidget() 
 {
     return _mainWidget;
 }

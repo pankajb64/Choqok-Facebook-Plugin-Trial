@@ -26,6 +26,7 @@
 #include <postwidget.h>
 #include "facebookpost.h"
 
+
 using namespace KFacebook;
 
 /*namespace Choqok
@@ -47,7 +48,7 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     virtual QString prepareStatus( const QString &txt );
     
     protected slots:
-    void slotImageFetched(QString& remoteUrl, QPixmap& pixmap) const;
+    void slotImageFetched(const QString& remoteUrl, const QPixmap& pixmap);
     
     protected:
     void downloadImage(QString& linkUrl) const;  

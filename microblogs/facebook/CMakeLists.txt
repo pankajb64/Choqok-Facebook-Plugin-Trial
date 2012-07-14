@@ -14,6 +14,7 @@ IF(KFacebook_FOUND)
     facebookmicroblog.cpp
     facebookeditaccountwidget.cpp
     facebookpostwidget.cpp
+    facebookutil.cpp
     )
 
     kde4_add_ui_files(choqok_facebook_SRCS
