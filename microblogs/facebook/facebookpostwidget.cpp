@@ -59,14 +59,14 @@ QString FacebookPostWidget::generateSign ()
 	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";*/
     
     if( !post->appId.isEmpty())
-        ss += " <b> <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a></b>";
+        ss += " <b> <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a></b> ";
     else
 	    ss += " <b>web</b> ";	
 
-    ss += " on <a href='"
+    ss += ", <a href='"
 	 + currentAccount()->microblog()->postUrl(currentAccount(), post->author.userName, post->postId)
- 	 + "'>"
-	 + "" + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "</a>";	
+ 	 + "' title='"
+	 + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "'>%1</a>";	
     return ss;
 
 }
@@ -104,7 +104,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	{
       downloadImage(post->iconUrl);
       QString imgUrl = getImageUrl(post->iconUrl);
-      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(post->iconUrl).arg(imgUrl);
+      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(currentAccount()->microblog()->postUrl(currentAccount(), currentPost()->author.userName, currentPost()->postId)).arg(imgUrl);
     }
 
 	  
