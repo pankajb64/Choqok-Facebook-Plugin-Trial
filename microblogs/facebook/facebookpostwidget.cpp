@@ -28,10 +28,11 @@
 #include <mediamanager.h>
 #include <textbrowser.h>
 #include "facebookutil.h"
+#include "facebookviewdialog.h"
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
-
+   connect(mainWidget(), SIGNAL(anchorClicked(QUrl)), this, SLOT (slotAnchorClicked(QUrl)));
 }
 
 QString FacebookPostWidget::generateSign ()
@@ -104,7 +105,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	{
       downloadImage(post->iconUrl);
       QString imgUrl = getImageUrl(post->iconUrl);
-      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(currentAccount()->microblog()->postUrl(currentAccount(), currentPost()->author.userName, currentPost()->postId)).arg(imgUrl);
+      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(link).arg(imgUrl);
     }
 
 	  
@@ -121,7 +122,7 @@ QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& 
             title = caption;
             caption.clear();
         } else {
-            title = type;
+            //title = type;
         }
     }    
     QString link_title = link;
@@ -163,4 +164,17 @@ void FacebookPostWidget::slotImageFetched(const QString& linkUrl, const QPixmap&
    Choqok::UI::PostWidget::updateUi();       */ 
 }
 
-
+void FacebookPostWidget::slotAnchorClicked(const QUrl& link)
+{
+	if ( ! link.isEmpty())
+	{
+		QString url = link.toString();
+		const QRegExp r1 ("facebook\\.com", Qt::CaseInsensitive); // A Facebook URL
+		const QRegExp r2 ( "facebook\\.com/\\d+/posts/\\d+", Qt::CaseInsensitive) ; // A Facebook Post URL
+		if ( url.contains(r1) && ! url.contains( r2)) // Its a Facebook URL but not a Facebook Post URL
+		{
+			FacebookViewDialog*  fdialog = new FacebookViewDialog(link, this);
+			fdialog->start(); 
+		}
+	}
+}

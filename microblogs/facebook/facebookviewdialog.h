@@ -21,41 +21,32 @@
     along with this program; if not, see http://www.gnu.org/licenses/
 */
 
-#ifndef FACEBOOKPOSTWIDGET_H
-#define FACEBOOKPOSTWIDGET_H
-#include <postwidget.h>
-#include "facebookpost.h"
+#ifndef FACEBOOKVIEWDIALOG_H
+#define FACEBOOKVIEWDIALOG_H
 
+#include <KDialog>
+#include <QUrl>
+#include <QProgressBar>
+#include <KWebView>
 
-using namespace KFacebook;
-
-/*namespace Choqok
+class FacebookViewDialog : public KDialog
 {
-  namespace UI
-  {
-	class PostWidget;
-  } 	
-}*/
-
-class FacebookPostWidget : public Choqok::UI::PostWidget {
-
-    Q_OBJECT
-    
-    public:
-    FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent = 0);
-    protected:	
-    virtual QString generateSign ();
-    virtual QString prepareStatus( const QString &txt );
-    
-    protected slots:
-    void slotImageFetched(const QString& remoteUrl, const QPixmap& pixmap);
-    void slotAnchorClicked(const QUrl& link);
-    
-    protected:
-    void downloadImage(QString& linkUrl) const;  
-    
-    private:
-    
-    QString prepareLink (QString& link, QString& title, QString& caption, QString& description, QString& type ) const;
+	Q_OBJECT
+	
+	public:
+	
+	  FacebookViewDialog (const QUrl& link, QWidget* parent);
+	  void setLink(const QUrl& link);
+	  void start();
+	
+	protected:
+	  void initUi();
+	   
+	private:
+	  QUrl mLink;
+	  KWebView* mWebView;
+	  QProgressBar* mProgressBar;
 };
+
 #endif
+
