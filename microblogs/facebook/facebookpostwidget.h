@@ -49,7 +49,7 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     
     protected slots:
     void slotImageFetched(const QString& remoteUrl, const QPixmap& pixmap);
-    void slotAnchorClicked(const QUrl& link);
+    void checkAnchor(const QUrl& link);
     
     protected:
     void downloadImage(QString& linkUrl) const;  

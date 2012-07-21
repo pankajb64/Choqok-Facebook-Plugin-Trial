@@ -24,15 +24,20 @@
 #include "facebookpostwidget.h"
 #include <KDebug>
 #include <KLocalizedString>
+#include <KAction>
+#include <KMenu>
+#include <klocalizedstring.h>
 #include <KUrl>
 #include <mediamanager.h>
 #include <textbrowser.h>
 #include "facebookutil.h"
 #include "facebookviewdialog.h"
+#include "facebookwhoiswidget.h"
+#include "facebookaccount.h"
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
-   connect(mainWidget(), SIGNAL(anchorClicked(QUrl)), this, SLOT (slotAnchorClicked(QUrl)));
+   
 }
 
 QString FacebookPostWidget::generateSign ()
@@ -105,7 +110,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	{
       downloadImage(post->iconUrl);
       QString imgUrl = getImageUrl(post->iconUrl);
-      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(link).arg(imgUrl);
+      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(imgUrl).arg(imgUrl);
     }
 
 	  
@@ -164,17 +169,42 @@ void FacebookPostWidget::slotImageFetched(const QString& linkUrl, const QPixmap&
    Choqok::UI::PostWidget::updateUi();       */ 
 }
 
-void FacebookPostWidget::slotAnchorClicked(const QUrl& link)
+
+void FacebookPostWidget::checkAnchor(const QUrl &link)
 {
-	if ( ! link.isEmpty())
-	{
-		QString url = link.toString();
-		const QRegExp r1 ("facebook\\.com", Qt::CaseInsensitive); // A Facebook URL
-		const QRegExp r2 ( "facebook\\.com/\\d+/posts/\\d+", Qt::CaseInsensitive) ; // A Facebook Post URL
-		if ( url.contains(r1) && ! url.contains( r2)) // Its a Facebook URL but not a Facebook Post URL
+	QString scheme = link.scheme();
+	
+	if (scheme == "img")
 		{
-			FacebookViewDialog*  fdialog = new FacebookViewDialog(link, this);
-			fdialog->start(); 
+			FacebookViewDialog* fdialog = new FacebookViewDialog(link, this);
+			fdialog->start();
 		}
-	}
+	
+	else if(scheme == "user")
+	 {
+        KMenu menu;
+        KAction * info = new KAction( KIcon("user-identity"), i18nc("Who is user", "Who is %1", currentPost()->author.realName), &menu );
+        KAction * openInBrowser = new KAction(KIcon("applications-internet"), i18nc("Open profile page in browser", "Open profile in browser"), &menu);
+
+        menu.addAction(info);
+        menu.addAction(openInBrowser);
+        
+                QAction * ret = menu.exec(QCursor::pos());
+        if(ret == 0)
+            return;
+        if(ret == info) {
+			QStringList list = currentPost()->postId.split("_");
+			
+			FacebookAccount* acc = qobject_cast<FacebookAccount *> (currentAccount());
+
+            FacebookWhoisWidget *wd = new FacebookWhoisWidget(acc, link.host(),  currentPost(), this);
+            wd->show(QCursor::pos());
+            return;
+        } else if(ret == openInBrowser){
+			FacebookMicroBlog* blog = qobject_cast < FacebookMicroBlog * > ( currentAccount()->microblog());
+            Choqok::openUrl( QUrl( blog->facebookUrl(currentAccount(), link.host()) ) );
+            return;
+        }
+	}else
+        Choqok::UI::PostWidget::checkAnchor(link);
 }

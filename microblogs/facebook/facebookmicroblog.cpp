@@ -273,7 +273,7 @@ void FacebookMicroBlog::aboutToUnload()
 
 QString FacebookMicroBlog::profileUrl (Choqok::Account* acc, const QString& userId) const
 {
-	return "http://www.facebook.com/profile.php?id=" + userId;
+	return QString("user://%1").arg(userId);
 }
 
 QString FacebookMicroBlog::postUrl(Choqok::Account*, const QString& username, const QString& postId) const
@@ -281,6 +281,12 @@ QString FacebookMicroBlog::postUrl(Choqok::Account*, const QString& username, co
     QStringList list = postId.split("_");	
     return QString ( "http://www.facebook.com/%1/posts/%2" ).arg ( list.at(0) ).arg ( list.at(1) );
 }
+
+QString FacebookMicroBlog::facebookUrl(Choqok::Account* acc, const QString& userId) const
+{
+	return QString("http://www.facebook.com/profile.php?id=%1").arg(userId);
+}
+
 
 QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 {
