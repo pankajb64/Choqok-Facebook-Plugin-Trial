@@ -33,7 +33,7 @@
 using namespace KFacebook;
 
 class FacebookAccount;
-
+//class KJob;
 class FacebookMicroBlog : public Choqok::MicroBlog
 {
   Q_OBJECT
@@ -45,6 +45,7 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     
     virtual ChoqokEditAccountWidget* createEditAccountWidget(Choqok::Account* account, QWidget* parent);
     virtual Choqok::UI::PostWidget* createPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent);
+    virtual Choqok::UI::ComposerWidget * createComposerWidget( Choqok::Account *account, QWidget *parent );
     virtual void createPost(Choqok::Account* theAccount, Choqok::Post* post);
     virtual void abortCreatePost(Choqok::Account* theAccount, Choqok::Post* post = 0);
     virtual void fetchPost(Choqok::Account* theAccount, Choqok::Post* post);
@@ -60,6 +61,8 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual QString profileUrl(Choqok::Account* account, const QString& username) const;
     virtual QString postUrl(Choqok::Account* account, const QString& username, const QString& postId) const;
     virtual QString facebookUrl(Choqok::Account* account, const QString& username) const;
+    virtual uint postCharLimit() const;
+    void createPostWithAttachment(Choqok::Account *theAccount, Choqok::Post *post, const QString &mediumToAttach = QString());
     //virtual QString prepareStatus(const FacebookPost * post) const;
 
   /*Q_SIGNALS:
@@ -69,8 +72,8 @@ protected  slots :
   void slotCreatePost(KJob* job);
   void slotTimeLineLoaded(KJob *job);
   private:
-     QMap<FacebookJob*, FacebookAccount*> mJobsAccount;
-     QMap<FacebookJob*, Choqok::Post*> mJobsPost;
+     QMap<KJob*, FacebookAccount*> mJobsAccount;
+     QMap<KJob*, Choqok::Post*> mJobsPost;
     
 };   
 #endif

@@ -37,6 +37,15 @@
 #include "facebookpostwidget.h"
 #include <application.h>
 #include "facebookutil.h"
+#include <notifymanager.h>
+#include "facebookcomposerwidget.h"
+#include <kio/netaccess.h>
+#include <kmimetype.h>
+#include "mediamanager.h"
+#include <kio/jobclasses.h>
+#include <kio/job.h>
+#include <QtOAuth/qoauth_namespace.h>
+#include <QtOAuth/QtOAuth>
 
 K_PLUGIN_FACTORY( MyPluginFactory, registerPlugin < FacebookMicroBlog > (); )
 K_EXPORT_PLUGIN( MyPluginFactory( "choqok_facebook" ) )
@@ -70,8 +79,17 @@ void FacebookMicroBlog::createPost(Choqok::Account* theAccount, Choqok::Post* po
 
 void FacebookMicroBlog::slotCreatePost(KJob* job)
 {
-    FacebookAccount* acc = mJobsAccount.take((FacebookJob * )job);
-    Choqok::Post* post = mJobsPost.take((FacebookJob * )job);
+    FacebookAccount* acc = mJobsAccount.take(job);
+    Choqok::Post* post = mJobsPost.take(job);
+    if ( post->isError ) {
+                
+        kError() << "Server Error:" ;
+        emit errorPost ( acc, post, Choqok::MicroBlog::ServerError, i18n ( "Creating the new post failed, with error" ), MicroBlog::Critical );
+   } else {
+       Choqok::NotifyManager::success(i18n("New post submitted successfully"));
+       emit postCreated ( acc, post );
+   }
+   
     emit postCreated ( acc, post );
 }
 void FacebookMicroBlog::abortCreatePost(Choqok::Account* theAccount, Choqok::Post* post)
@@ -123,6 +141,11 @@ ChoqokEditAccountWidget* FacebookMicroBlog::createEditAccountWidget(Choqok::Acco
     }
 }    
 
+Choqok::UI::ComposerWidget* FacebookMicroBlog::createComposerWidget(Choqok::Account* account, QWidget* parent)
+{
+    return new FacebookComposerWidget(account, parent);
+}
+
 Choqok::TimelineInfo* FacebookMicroBlog::timelineInfo(const QString& timelineName)
 {
   if(timelineName == "Home") {
@@ -144,6 +167,7 @@ QList< Choqok::Post* > FacebookMicroBlog::loadTimeline(Choqok::Account* account,
     kDebug()<<timelineName;
     QList< Choqok::Post* > list;
     QString fileName = Choqok::AccountManager::generatePostBackupFileName(account->alias(), timelineName);
+    kDebug() << "Backup File Name - " << fileName;
     KConfig postsBackup( "choqok/" + fileName, KConfig::NoGlobals, "data" );
     QStringList tmpList = postsBackup.groupList();
 
@@ -393,5 +417,83 @@ QString FacebookMicroBlog::prepareStatus(const FacebookPost * post) const
 	QString status = post->content + " <br/> <a href = \"" + post->link + " \"> <h2>" + post->title + "</h2> <br/> <h3>" + post->caption + "</h3> </a><br/> " + post->description + " <br/> ( Post Type - "  + post->type + " ) <br/> "  + post->story;
 	
 	return status;
+}*/
+
+uint FacebookMicroBlog::postCharLimit() const
+{
+	return 63206;
+}
+void FacebookMicroBlog::createPostWithAttachment(Choqok::Account* theAccount, Choqok::Post* post,
+                                                 const QString& mediumToAttach)
+{
+    if( mediumToAttach.isEmpty() ){
+        createPost(theAccount, post);
+    } else {
+        QByteArray picData;
+        QString tmp;
+        KUrl picUrl(mediumToAttach);
+        KIO::TransferJob *picJob = KIO::get( picUrl, KIO::Reload, KIO::HideProgressInfo);
+        if( !KIO::NetAccess::synchronousRun(picJob, 0, &picData) ){
+            kError()<<"Job error: " << picJob->errorString();
+            KMessageBox::detailedError(Choqok::UI::Global::mainWindow(),
+                                       i18n( "Uploading medium failed: cannot read the medium file." ),
+            picJob->errorString() );
+            return;
+        }
+        if ( picData.count() == 0 ) {
+            kError() << "Cannot read the media file, please check if it exists.";
+            KMessageBox::error( Choqok::UI::Global::mainWindow(),
+                                i18n( "Uploading medium failed: cannot read the medium file." ) );
+            return;
+        }
+        ///Documentation: http://identi.ca/notice/17779990
+        FacebookAccount* account = qobject_cast<FacebookAccount*>(theAccount);
+        QString uploadUrl = QString("https://graph.facebook.com/%1/photos").arg(post->author.userId);
+        KUrl url(uploadUrl);
+        
+        QByteArray fileContentType = KMimeType::findByUrl( picUrl, 0, true )->name().toUtf8();
+
+        QMap<QString, QByteArray> formdata;
+        formdata["message"] = post->content.toUtf8();
+        formdata["access_token"] = account->accessToken().toUtf8();
+        //formdata["source"] = picData;
+
+        QMap<QString, QByteArray> mediafile;
+        mediafile["name"] = "source";
+        mediafile["filename"] = picUrl.fileName().toUtf8();
+        mediafile["mediumType"] = fileContentType;
+        mediafile["medium"] = picData;
+        QList< QMap<QString, QByteArray> > listMediafiles;
+        listMediafiles.append(mediafile);
+
+        QByteArray data = Choqok::MediaManager::createMultipartFormData(formdata, listMediafiles);
+
+        KIO::StoredTransferJob *job = KIO::storedHttpPost(data, url, KIO::HideProgressInfo) ;
+        if ( !job ) {
+            kError() << "Cannot create a http POST request!";
+            return;
+        }
+        job->addMetaData( "content-type", "Content-Type: multipart/form-data; boundary=AaB03x" );
+        //job->addMetaData("customHTTPHeader", "Authorization: " + authorizationHeader(account, url, QOAuth::POST));
+        mJobsPost.insert(job, post);
+        mJobsAccount.insert(job, account);
+        connect( job, SIGNAL( result( KJob* ) ),
+                 SLOT( slotCreatePost(KJob*) ) );
+        job->start();
+    }
+}
+/*QByteArray FacebookMicroBlog::authorizationHeader(FacebookAccount* theAccount, const KUrl &requestUrl,
+                                                    QOAuth::HttpMethod method, QOAuth::ParamMap params)
+{
+    QByteArray auth;
+    if(theAccount->usingOAuth()){
+        auth = theAccount->oauthInterface()->createParametersString( requestUrl.url(), method, theAccount->oauthToken(),
+                                                             theAccount->oauthTokenSecret(), QOAuth::HMAC_SHA1,
+                                                             params, QOAuth::ParseForHeaderArguments );
+    } else {
+        auth = theAccount->username().toUtf8() + ':' + theAccount->password().toUtf8();
+        auth = auth.toBase64().prepend( "Basic " );
+    }
+    return auth;
 }*/
 #include "facebookmicroblog.moc"
