@@ -64,9 +64,9 @@ public:
     * Returns the API Key, APP ID and APP SECRET
     */
     
-    QString appID() const;
-    QString apiKey() const;
-    QString appSecret() const;
+    static QString appID() ;
+    static QString apiKey();
+    static QString appSecret();
 
 protected slots:
     virtual void userInfoJobDone(KJob* job);

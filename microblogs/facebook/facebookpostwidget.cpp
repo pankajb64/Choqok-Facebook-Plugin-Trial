@@ -176,7 +176,13 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
 	
 	if (scheme == "img")
 		{
-			FacebookViewDialog* fdialog = new FacebookViewDialog(link, this);
+			QString postId = currentPost()->postId;
+			QStringList list = postId.split("_");
+			postId = list[1];
+			QString userId = list[0];
+			QString urlString = QString("https://www.facebook.com/%1/posts/%2").arg(userId).arg(postId);
+			QUrl url(urlString);
+			FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
 			fdialog->start();
 		}
 	

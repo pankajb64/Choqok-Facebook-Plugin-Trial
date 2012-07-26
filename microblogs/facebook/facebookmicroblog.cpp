@@ -46,6 +46,9 @@
 #include <kio/job.h>
 #include <QtOAuth/qoauth_namespace.h>
 #include <QtOAuth/QtOAuth>
+#include <KAction>
+#include <QMenu>
+#include "facebookviewdialog.h"
 
 K_PLUGIN_FACTORY( MyPluginFactory, registerPlugin < FacebookMicroBlog > (); )
 K_EXPORT_PLUGIN( MyPluginFactory( "choqok_facebook" ) )
@@ -482,18 +485,34 @@ void FacebookMicroBlog::createPostWithAttachment(Choqok::Account* theAccount, Ch
         job->start();
     }
 }
-/*QByteArray FacebookMicroBlog::authorizationHeader(FacebookAccount* theAccount, const KUrl &requestUrl,
-                                                    QOAuth::HttpMethod method, QOAuth::ParamMap params)
+
+QMenu* FacebookMicroBlog::createActionsMenu(Choqok::Account* theAccount, QWidget* parent)
 {
-    QByteArray auth;
-    if(theAccount->usingOAuth()){
-        auth = theAccount->oauthInterface()->createParametersString( requestUrl.url(), method, theAccount->oauthToken(),
-                                                             theAccount->oauthTokenSecret(), QOAuth::HMAC_SHA1,
-                                                             params, QOAuth::ParseForHeaderArguments );
-    } else {
-        auth = theAccount->username().toUtf8() + ':' + theAccount->password().toUtf8();
-        auth = auth.toBase64().prepend( "Basic " );
+    QMenu * menu = MicroBlog::createActionsMenu(theAccount, parent);
+
+    KAction *directMessge = new KAction( KIcon("mail-message-new"), i18n("Send Private Message..."), menu );
+    directMessge->setData( theAccount->alias() );
+    connect( directMessge, SIGNAL(triggered(bool)), SLOT(showPrivateMessageDialog()) );
+    menu->addAction(directMessge);
+
+    return menu;
+}
+
+void FacebookMicroBlog::showPrivateMessageDialog( FacebookAccount *theAccount, const QString &toUsername)
+{
+    kDebug();
+    if( !theAccount ) {
+        KAction *act = qobject_cast<KAction *>(sender());
+        theAccount = qobject_cast<FacebookAccount*>( Choqok::AccountManager::self()->findAccount( act->data().toString() ) );
     }
-    return auth;
-}*/
+    QString appId = FacebookEditAccountWidget::appID();
+    QString urlString = QString("https://www.facebook.com/dialog/send?app_id=%1&to=%2&link=http://choqok.gnufolks.org&redirect_uri=http://choqok.gnufolks.org/").arg(appId).arg(toUsername); 
+    QUrl url(urlString);
+    //QUrl choqokUrl("http://choqok.gnufolks.org");
+    FacebookViewDialog * dialog = new FacebookViewDialog(url, Choqok::UI::Global::mainWindow(), "http://choqok.gnufolks.org");
+    dialog->start();
+
+}
+
+
 #include "facebookmicroblog.moc"

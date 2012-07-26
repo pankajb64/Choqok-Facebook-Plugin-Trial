@@ -63,6 +63,7 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual QString facebookUrl(Choqok::Account* account, const QString& username) const;
     virtual uint postCharLimit() const;
     void createPostWithAttachment(Choqok::Account *theAccount, Choqok::Post *post, const QString &mediumToAttach = QString());
+    virtual QMenu* createActionsMenu(Choqok::Account* theAccount, QWidget* parent = Choqok::UI::Global::mainWindow());
     //virtual QString prepareStatus(const FacebookPost * post) const;
 
   /*Q_SIGNALS:
@@ -71,6 +72,8 @@ class FacebookMicroBlog : public Choqok::MicroBlog
 protected  slots :
   void slotCreatePost(KJob* job);
   void slotTimeLineLoaded(KJob *job);
+  virtual void showPrivateMessageDialog( FacebookAccount *theAccount = 0, const QString &toUsername = QString() );
+  
   private:
      QMap<KJob*, FacebookAccount*> mJobsAccount;
      QMap<KJob*, Choqok::Post*> mJobsPost;

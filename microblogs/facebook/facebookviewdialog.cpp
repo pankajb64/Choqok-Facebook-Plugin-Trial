@@ -29,10 +29,15 @@
 #include <QLabel>
 #include <QWebFrame>
 #include <QWebElement>
+#include <KDebug>
+#include <notifymanager.h>
 
-FacebookViewDialog::FacebookViewDialog ( const QUrl& link, QWidget* parent) : KDialog(parent)
+FacebookViewDialog::FacebookViewDialog ( const QUrl& link, QWidget* parent, const QString& urlString) : KDialog(parent)
 {
 	mLink = link;
+	QUrl url(urlString);
+	mCloseUrl = url;
+	initUi();
 }
 
 
@@ -50,6 +55,8 @@ void FacebookViewDialog::initUi()
   layout->setMargin( 0 );
   setMainWidget( widget );
   mWebView = new KWebView( this );
+  mWebView->setMinimumWidth(1000);
+  mWebView->setMinimumHeight(500);
   
   mProgressBar = new QProgressBar( this );
   mProgressBar->setRange( 0, 100 );
@@ -64,6 +71,7 @@ void FacebookViewDialog::initUi()
   connect( mWebView, SIGNAL(loadStarted()), progressWidget, SLOT(show()) );
   connect( mWebView, SIGNAL(loadFinished(bool)), progressWidget, SLOT(hide()) );
   connect( mWebView, SIGNAL(loadProgress(int)), mProgressBar, SLOT(setValue(int)) );
+  connect( mWebView, SIGNAL(urlChanged(QUrl)), this, SLOT(urlChanged(QUrl)) );
 }
 
 void FacebookViewDialog::setLink( const QUrl& link)
@@ -75,10 +83,30 @@ void FacebookViewDialog::start()
 {
 	Q_ASSERT( !mLink.isEmpty() );
 	
-	//kDebug() << "Showing" << mLink.toString();
+	kDebug() << "Showing" << mLink.toString();
     mWebView->setUrl( mLink  );
     show();
 }
 
+void FacebookViewDialog::urlChanged(const QUrl& url)
+{
+	QString host = url.host();
+	
+	if ( !mCloseUrl.isEmpty() && host.contains(mCloseUrl.host(), Qt::CaseInsensitive))
+	{
+		Choqok::NotifyManager::success(i18n("New message submitted successfully ( unless you canceled it explicitly)"));
+		//mWebView->close();
+		this->close();
+	}
+}
 
+void FacebookViewDialog::setCloseUrl(const QString& urlString)
+{
+	QUrl url(urlString);
+	mCloseUrl = url;
+}
 
+QString FacebookViewDialog::closeUrl() const
+{
+	return mCloseUrl.toString();
+}

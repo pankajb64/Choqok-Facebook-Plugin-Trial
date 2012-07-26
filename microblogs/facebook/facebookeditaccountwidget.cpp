@@ -264,17 +264,17 @@ void FacebookEditAccountWidget::saveTimelinesTableState()
 
 */
 
-QString FacebookEditAccountWidget::apiKey() const
+QString FacebookEditAccountWidget::apiKey() 
 {
   return "698f95e6ad2c477359f75f344d12b899";
 }
 
-QString FacebookEditAccountWidget::appID() const
+QString FacebookEditAccountWidget::appID() 
 {
   return "161169767282198";
 }
 
-QString FacebookEditAccountWidget::appSecret() const
+QString FacebookEditAccountWidget::appSecret()
 {
   return "343ea4a345c8926c1e00183e82ea9542";
 }
