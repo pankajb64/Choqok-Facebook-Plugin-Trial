@@ -53,6 +53,7 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     
     protected:
     void downloadImage(QString& linkUrl) const;  
+    void initUi();
     
     private:
     

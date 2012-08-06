@@ -34,6 +34,9 @@
 #include "facebookviewdialog.h"
 #include "facebookwhoiswidget.h"
 #include "facebookaccount.h"
+#include <KPushButton>
+#include <QtGui/QtGui>
+#include <QtGui/QLayout>
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
@@ -95,6 +98,9 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	QString story = Choqok::UI::PostWidget::prepareStatus(post->story);
 	QString link = /*Choqok::UI::PostWidget::prepareStatus*/(post->link);
     QString status;
+    
+    //status += post->likeCount + " , " + post->commentCount + " <br/> ";
+    
     if( !story.isEmpty() )
         status += story + " <br/> ";
     if( !link.isEmpty() )
@@ -195,7 +201,7 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
         menu.addAction(info);
         menu.addAction(openInBrowser);
         
-                QAction * ret = menu.exec(QCursor::pos());
+        QAction * ret = menu.exec(QCursor::pos());
         if(ret == 0)
             return;
         if(ret == info) {
@@ -203,7 +209,7 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
 			
 			FacebookAccount* acc = qobject_cast<FacebookAccount *> (currentAccount());
 
-            FacebookWhoisWidget *wd = new FacebookWhoisWidget(acc, link.host(),  currentPost(), this);
+            FacebookWhoisWidget *wd = new FacebookWhoisWidget(acc, link.host(),  currentPost(), /*ShowType::UserInfo ,*/ this);
             wd->show(QCursor::pos());
             return;
         } else if(ret == openInBrowser){
@@ -213,4 +219,61 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
         }
 	}else
         Choqok::UI::PostWidget::checkAnchor(link);
+}
+
+void FacebookPostWidget::initUi()
+{
+    Choqok::UI::PostWidget::initUi();
+    
+    FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+
+    KPushButton *btnComment = addButton( "btnComment",i18nc( "@info:tooltip", "Comment" ), "edit-undo" );
+    KPushButton *btnViewComments = addButton( "btnViewComments",i18nc( "@info:tooltip", "View Commentss on this post" ), "" );
+    KPushButton *btnLike = addButton( "btnLike",i18nc( "@info:tooltip", "Like" ), "rating" );
+    KPushButton *btnViewLikes = addButton( "btnViewLikes",i18nc( "@info:tooltip", "View Likes on this post" ), "" );
+    KPushButton *btn = buttons().value("btnResend");
+    btnViewLikes->setText (post->likeCount);
+    btnViewComments->setText (post->commentCount);
+    
+    QHBoxLayout layout;
+    layout.setContentsMargins(0, 0, 0, 0);
+    layout.setSizeConstraint(QLayout::SetFixedSize);
+    
+    layout.addWidget(btnComment);
+    layout.addWidget(btnViewComments);
+    layout.addWidget(btnLike);
+    layout.addWidget(btnViewLikes);
+    
+    
+    if ( btn)
+      btn->setToolTip("Share");
+    /*KMenu menu ;
+    menu.addAction(btnComment);
+    menu.addAction(btnLike);
+
+    KAction *actRep = new KAction(KIcon("edit-undo"), i18n("Reply to %1", currentPost()->author.userName), menu);
+    menu->addAction(actRep);
+    connect( actRep, SIGNAL(triggered(bool)), SLOT(slotReply()) );
+    connect( btnRe, SIGNAL(clicked(bool)), SLOT(slotReply()) );
+
+    KAction *actWrite = new KAction( KIcon("document-edit"), i18n("Write to %1", currentPost()->author.userName),
+                                     menu );
+    menu->addAction(actWrite);
+    connect( actWrite, SIGNAL(triggered(bool)), SLOT(slotWriteTo()) );
+
+    if( !currentPost()->isPrivate ) {
+        KAction *actReplytoAll = new KAction(i18n("Reply to all"), menu);
+        menu->addAction(actReplytoAll);
+        connect( actReplytoAll, SIGNAL(triggered(bool)), SLOT(slotReplyToAll()) );
+    }
+
+    menu->setDefaultAction(actRep);
+    btnRe->setDelayedMenu(menu);
+
+    if( !currentPost()->isPrivate ) {
+        d->btnFav = addButton( "btnFavorite",i18nc( "@info:tooltip", "Favorite" ), "rating" );
+        d->btnFav->setCheckable(true);
+        connect( d->btnFav, SIGNAL(clicked(bool)), SLOT(setFavorite()) );
+        updateFavStat();
+    }*/
 }

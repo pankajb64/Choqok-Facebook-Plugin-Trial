@@ -376,9 +376,9 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  //post->properties = postInfo->properties();
 	  post->type = assignOrNull(postInfo->type());
 	  post->source = assignOrNull(postInfo->source());
-	  post->likeCount = postInfo->likes().isNull() ?  -1 : postInfo->likes()->count();
+	  post->likeCount = postInfo->likes().isNull() ?  "no likes" : QString::number(postInfo->likes()->count()); //+ " likes";
 	  post->story = assignOrNull(postInfo->story());
-	  post->commentCount = postInfo->comments().isNull() ?  -1 : postInfo->comments()->count();
+	  post->commentCount = postInfo->comments().isNull() ?  "no comments" : QString::number(postInfo->comments()->count()); // + " comments";
 	  post->appId = postInfo->application().isNull() ?  "" : postInfo->application()->id();
 	  post->appName = postInfo->application().isNull() ?  "" : postInfo->application()->name();
 	  post->creationDateTime = postInfo->createdTime().dateTime();

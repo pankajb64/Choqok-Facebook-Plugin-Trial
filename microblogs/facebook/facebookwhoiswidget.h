@@ -50,6 +50,7 @@
 #include <QtCore/QPointer>
 #include <kfacebook/userinfojob.h>
 #include <kfacebook/userinfo.h>
+#include "facebookutil.h"
 
 class FacebookWhoisWidget : public QFrame
 {
@@ -57,7 +58,7 @@ class FacebookWhoisWidget : public QFrame
 	
 	public:
     FacebookWhoisWidget( FacebookAccount* theAccount, const QString &userId,
-                           const Choqok::Post* post, QWidget *parent=0 );
+                           const Choqok::Post* post,  /*ShowType type,*/ QWidget *parent=0 );
     
     void show(QPoint pos);
 
@@ -87,6 +88,7 @@ private:
     QString userId;
     QString errorMessage;
     UserInfoPtr currentUserInfo;
+    //ShowType mType;
 };
 
 #endif
