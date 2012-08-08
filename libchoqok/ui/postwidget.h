@@ -127,6 +127,8 @@ public:
     static void addAction( KAction *action );
 
     static QString getBaseStyle();
+    
+    
 
 public Q_SLOTS:
     /**
@@ -201,6 +203,9 @@ protected:
     virtual QString generateSign();
     virtual QString formatDateTime( const QDateTime &time ) ;
     virtual QString formatDateTime( const KDateTime &time );
+    virtual bool isResendAvailable() ;
+    virtual bool isRemoveAvailable() ;
+    
     /**
     @brief Create and Add a new button to widget
     This function will add button to UI!
@@ -227,6 +232,7 @@ protected:
     void setAvatarText( const QString &text );
     QString avatarText() const;
     virtual QString generateResendText();
+    
 
 private:
     class Private;

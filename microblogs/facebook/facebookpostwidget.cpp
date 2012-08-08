@@ -37,10 +37,16 @@
 #include <KPushButton>
 #include <QtGui/QtGui>
 #include <QtGui/QLayout>
+#include <KMessageBox>
+#include <kfacebook/getlikesjob.h>
+
+using namespace KFacebook;
+
+const KIcon FacebookPostWidget::unFavIcon(Choqok::MediaManager::convertToGrayScale(KIcon("rating").pixmap(16)) );
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
-   
+   updateUserLike();
 }
 
 QString FacebookPostWidget::generateSign ()
@@ -225,28 +231,20 @@ void FacebookPostWidget::initUi()
 {
     Choqok::UI::PostWidget::initUi();
     
-    FacebookPost* post = static_cast<FacebookPost*>(currentPost());
-
-    KPushButton *btnComment = addButton( "btnComment",i18nc( "@info:tooltip", "Comment" ), "edit-undo" );
-    KPushButton *btnViewComments = addButton( "btnViewComments",i18nc( "@info:tooltip", "View Commentss on this post" ), "" );
     KPushButton *btnLike = addButton( "btnLike",i18nc( "@info:tooltip", "Like" ), "rating" );
     KPushButton *btnViewLikes = addButton( "btnViewLikes",i18nc( "@info:tooltip", "View Likes on this post" ), "" );
-    KPushButton *btn = buttons().value("btnResend");
-    btnViewLikes->setText (post->likeCount);
-    btnViewComments->setText (post->commentCount);
+    KPushButton *btnComment = addButton( "btnComment",i18nc( "@info:tooltip", "Comment" ), "edit-undo" );
+    KPushButton *btnViewComments = addButton( "btnViewComments",i18nc( "@info:tooltip", "View Comments on this post" ), "" );
+
+    updateLikeAndCommentCounts();
     
-    QHBoxLayout layout;
-    layout.setContentsMargins(0, 0, 0, 0);
-    layout.setSizeConstraint(QLayout::SetFixedSize);
+    updateFavStat();
     
-    layout.addWidget(btnComment);
-    layout.addWidget(btnViewComments);
-    layout.addWidget(btnLike);
-    layout.addWidget(btnViewLikes);
+    connect ( btnLike , SIGNAL(clicked(bool)), SLOT(slotLike()) );
+    connect ( btnViewLikes, SIGNAL( clicked(bool)), SLOT(slotViewLikes()) );
+    connect ( btnComment, SIGNAL(clicked(bool)), SLOT(slotComment()) );
+    connect ( btnViewComments, SIGNAL(clicked(bool)), SLOT(slotViewComments()) );
     
-    
-    if ( btn)
-      btn->setToolTip("Share");
     /*KMenu menu ;
     menu.addAction(btnComment);
     menu.addAction(btnLike);
@@ -276,4 +274,180 @@ void FacebookPostWidget::initUi()
         connect( d->btnFav, SIGNAL(clicked(bool)), SLOT(setFavorite()) );
         updateFavStat();
     }*/
+}
+
+void FacebookPostWidget::updateUi()
+{
+	Choqok::UI::PostWidget::updateUi();
+	
+	updateLikeAndCommentCounts();
+}
+
+void FacebookPostWidget::updateUserLike()
+{
+	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	GetLikesJob* getJob = new GetLikesJob(currentPost()->postId, acc->accessToken());
+	connect( getJob, SIGNAL(result(KJob*)), this, SLOT(slotUpdateUserLike(KJob*)) );
+    getJob->start();
+}
+
+void FacebookPostWidget::slotUpdateUserLike(KJob* job)
+{
+	GetLikesJob *getJob = dynamic_cast<GetLikesJob *>( job );
+	
+	if ( getJob-> error() )
+	{
+		Choqok::NotifyManager::error(getJob->errorString(), i18n("Failed to Update User Like Status"));
+	}
+	
+	else 
+	{
+		currentPost()->isFavorited = getJob->userLikes();
+		updateFavStat();
+	}
+}
+
+void FacebookPostWidget::updateLikeAndCommentCounts()
+{
+	FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+	
+	KPushButton * btnViewLikes = buttons().value("btnViewLikes");
+	KPushButton * btnViewComments = buttons().value("btnViewComments");
+	
+	QString likeCount = post->likeCount;
+    QString commentCount = post->commentCount;
+    
+    if (btnViewLikes)
+    {
+		btnViewLikes->setText(likeCount + " ");
+		btnViewLikes->setIconSize(QSize(0,0));
+		btnViewLikes->setMinimumSize(QSize(likeCount.length() * 10, 20));
+    }
+    
+    if ( btnViewComments)
+    {
+		btnViewComments->setText(commentCount + " ");
+		btnViewComments->setIconSize(QSize(0,0));    
+		btnViewComments->setMinimumSize(QSize(commentCount.length() * 10, 20));
+	}
+}
+void FacebookPostWidget::slotLike()
+{
+	
+	
+	QString postId = currentPost()->postId;
+	QString path = QString("/%1/likes").arg(postId);
+	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	
+	FacebookJob * job;
+	
+	if ( ! currentPost() -> isFavorited )
+		 job = new FacebookAddJob(path, acc->accessToken());
+	else
+	   	 job = new FacebookDeleteJob(path, acc->accessToken());
+	
+	connect( job, SIGNAL(result(KJob*)), this, SLOT(slotLiked(KJob*)) );
+    
+    job->start();
+    
+	//KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+}
+
+void FacebookPostWidget::slotLiked( KJob* job)
+{
+	FacebookJob * fJob ;
+	
+	if ( ! currentPost()->isFavorited )
+		fJob = dynamic_cast<FacebookAddJob *>( job );
+	else
+		fJob = dynamic_cast<FacebookDeleteJob *>( job ); 	
+	
+	if ( !fJob-> error() || fJob->error() == KJob::UserDefinedError   )
+	{
+		setFavorite();
+		updateLikeCount();
+		
+	}
+	
+	else 
+	{
+		Choqok::NotifyManager::error(fJob->errorString(), i18n("Failed to Like Post"));
+	}
+}
+
+void FacebookPostWidget::setFavorite()
+{
+    currentPost()->isFavorited = !currentPost()->isFavorited;
+    updateFavStat();
+}
+
+
+void FacebookPostWidget::updateFavStat()
+{
+	KPushButton* btnLike = buttons().value("btnLike");
+	
+	if (btnLike)
+	{
+		if(currentPost()->isFavorited){
+			btnLike->setChecked(true);
+			btnLike->setIcon(KIcon("rating"));
+			btnLike->setToolTip("Unlike this post");
+		} else {
+			btnLike->setChecked(false);
+			btnLike->setIcon(unFavIcon);
+			btnLike->setToolTip("Like this post");
+		}
+	}
+}
+
+void FacebookPostWidget::updateLikeCount()
+{
+	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	GetLikesJob* getJob = new GetLikesJob(currentPost()->postId, acc->accessToken());
+	connect( getJob, SIGNAL(result(KJob*)), this, SLOT(slotUpdateLikeCount(KJob*)) );
+    getJob->start();
+	
+}
+
+void FacebookPostWidget::slotUpdateLikeCount(KJob * job)
+{
+	GetLikesJob *getJob = dynamic_cast<GetLikesJob *>( job );
+	
+	if ( getJob-> error() )
+	{
+		Choqok::NotifyManager::error(getJob->errorString(), i18n("Failed to Update Like Count"));
+	}
+	
+	else 
+	{
+		FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+		
+		post->likeCount = QString::number(getJob->likeCount());
+		updateLikeAndCommentCounts();
+	}
+	
+}
+
+void FacebookPostWidget::slotViewLikes()
+{
+	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+}
+
+void FacebookPostWidget::slotComment()
+{
+	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+}
+
+void FacebookPostWidget::slotViewComments ()
+{
+	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+}
+bool FacebookPostWidget::isRemoveAvailable() 
+{
+	return false;
+}
+
+bool FacebookPostWidget::isResendAvailable() 
+{
+	return false;
 }

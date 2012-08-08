@@ -193,7 +193,25 @@ void PostWidget::initUi()
     setupUi();
     _mainWidget->document()->addResource( QTextDocument::ImageResource, QUrl("img://profileImage"),
                              MediaManager::self()->defaultImage() );
-
+                             
+     baseText = &otherText;                        
+     
+     if ( isRemoveAvailable() )
+     {
+		KPushButton *btnRemove = addButton("btnRemove", i18nc( "@info:tooltip", "Remove" ), "edit-delete" );
+        connect(btnRemove, SIGNAL(clicked(bool)), SLOT(removeCurrentPost()));
+        baseText = &ownText;
+	 }
+	 
+	 if ( isResendAvailable() )
+	 {
+		KPushButton *btnResend = addButton("btnResend", i18nc( "@info:tooltip", "ReSend" ), "retweet" );
+        connect(btnResend, SIGNAL(clicked(bool)), SLOT(slotResendPost()));
+        baseText = &otherText;
+	 }
+	 
+	 
+    /*
     if(d->mCurrentAccount->username().compare( d->mCurrentPost->author.userName, Qt::CaseInsensitive ) == 0
         || currentPost()->isPrivate) {
         KPushButton *btnRemove = addButton("btnRemove", i18nc( "@info:tooltip", "Remove" ), "edit-delete" );
@@ -203,7 +221,8 @@ void PostWidget::initUi()
         KPushButton *btnResend = addButton("btnResend", i18nc( "@info:tooltip", "ReSend" ), "retweet" );
         connect(btnResend, SIGNAL(clicked(bool)), SLOT(slotResendPost()));
         baseText = &otherText;
-    }
+    }*/
+    
     d->mImage = "<img src=\"img://profileImage\" title=\""+ d->mCurrentPost->author.realName +"\" width=\"48\" height=\"48\" />";
     d->mContent = prepareStatus(d->mCurrentPost->content);
     d->mSign = generateSign();
@@ -219,7 +238,7 @@ void PostWidget::initUi()
 
 void PostWidget::updateUi() 
 {
-    _mainWidget->setHtml(baseText->arg( d->mImage, d->mContent,
+	_mainWidget->setHtml(baseText->arg( d->mImage, d->mContent,
                                         d->mSign.arg(formatDateTime( d->mCurrentPost->creationDateTime )),
                                         d->dir ));
 }
@@ -641,5 +660,14 @@ QString PostWidget::getBaseStyle()
     return baseStyle;
 }
 
+bool PostWidget::isRemoveAvailable() 
+{
+	return d->mCurrentAccount->username().compare( d->mCurrentPost->author.userName, Qt::CaseInsensitive ) == 0;
+}
+
+bool PostWidget::isResendAvailable() 
+{
+	return d->mCurrentAccount->username().compare( d->mCurrentPost->author.userName, Qt::CaseInsensitive ) != 0;
+}
 
 #include "postwidget.moc"

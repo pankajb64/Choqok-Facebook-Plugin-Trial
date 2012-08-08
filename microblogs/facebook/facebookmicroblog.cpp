@@ -208,6 +208,7 @@ QList< Choqok::Post* > FacebookMicroBlog::loadTimeline(Choqok::Account* account,
             st->updateDateTime = grp.readEntry( "updateDateTime", QDateTime::currentDateTime() );            
             st->isRead = grp.readEntry("isRead", true);
             st->conversationId = grp.readEntry("conversationId", QString());
+            st->isFavorited = grp.readEntry("isFavorited", true);
 			//Choqok::Post* post = *st;
 
             list.append( st );
@@ -258,6 +259,7 @@ void FacebookMicroBlog::saveTimeline(Choqok::Account* account, const QString& ti
         grp.writeEntry( "appName", post->appName );
         grp.writeEntry( "appId", post->appId.toString() );
         grp.writeEntry( "updateDateTime", post->updateDateTime );
+        grp.writeEntry( "isFavorited", post->isFavorited );
     }
     postsBackup.sync();
 	if(Choqok::Application::isShuttingDown())
@@ -376,13 +378,14 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  //post->properties = postInfo->properties();
 	  post->type = assignOrNull(postInfo->type());
 	  post->source = assignOrNull(postInfo->source());
-	  post->likeCount = postInfo->likes().isNull() ?  "no likes" : QString::number(postInfo->likes()->count()); //+ " likes";
+	  post->likeCount = postInfo->likes().isNull() ?  "0" : QString::number(postInfo->likes()->count()); //+ " likes";
 	  post->story = assignOrNull(postInfo->story());
-	  post->commentCount = postInfo->comments().isNull() ?  "no comments" : QString::number(postInfo->comments()->count()); // + " comments";
+	  post->commentCount = postInfo->comments().isNull() ?  "0" : QString::number(postInfo->comments()->count()); // + " comments";
 	  post->appId = postInfo->application().isNull() ?  "" : postInfo->application()->id();
 	  post->appName = postInfo->application().isNull() ?  "" : postInfo->application()->name();
 	  post->creationDateTime = postInfo->createdTime().dateTime();
 	  post->updateDateTime = postInfo->updatedTime().dateTime();
+	  
   
       //post->content = prepareStatus(post);
       
@@ -513,6 +516,8 @@ void FacebookMicroBlog::showPrivateMessageDialog( FacebookAccount *theAccount, c
     dialog->start();
 
 }
+
+
 
 
 #include "facebookmicroblog.moc"

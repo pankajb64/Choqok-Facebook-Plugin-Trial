@@ -25,7 +25,7 @@
 #define FACEBOOKPOSTWIDGET_H
 #include <postwidget.h>
 #include "facebookpost.h"
-
+#include <KJob>
 
 using namespace KFacebook;
 
@@ -43,17 +43,35 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     
     public:
     FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent = 0);
-    protected:	
-    virtual QString generateSign ();
-    virtual QString prepareStatus( const QString &txt );
+    
+    
     
     protected slots:
     void slotImageFetched(const QString& remoteUrl, const QPixmap& pixmap);
     void checkAnchor(const QUrl& link);
+    virtual void slotLike();
+    virtual void slotViewLikes();
+    virtual void slotComment();
+    virtual void slotViewComments();
+    virtual void slotLiked(KJob* job);
+    virtual void slotUpdateLikeCount(KJob* job);
+    virtual void slotUpdateUserLike(KJob* job);
     
-    protected:
+    protected:	
+    virtual QString generateSign ();
+    virtual QString prepareStatus( const QString &txt );
     void downloadImage(QString& linkUrl) const;  
     void initUi();
+    virtual bool isResendAvailable() ;
+    virtual bool isRemoveAvailable() ;
+    virtual void updateLikeAndCommentCounts();
+    virtual void updateUi();
+    virtual void setFavorite();
+    virtual void updateFavStat();
+    virtual void updateLikeCount();
+    virtual void updateUserLike();
+    
+    static const KIcon unFavIcon;
     
     private:
     
