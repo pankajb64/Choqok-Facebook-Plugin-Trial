@@ -39,6 +39,8 @@
 #include <QtGui/QLayout>
 #include <KMessageBox>
 #include <kfacebook/getlikesjob.h>
+#include <kfacebook/getcommentsjob.h>
+#include "facebookcommentdialog.h"
 
 using namespace KFacebook;
 
@@ -435,7 +437,68 @@ void FacebookPostWidget::slotViewLikes()
 
 void FacebookPostWidget::slotComment()
 {
-	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+	
+	FacebookCommentDialog* dialog = new FacebookCommentDialog(this);
+	connect (dialog, SIGNAL(commented(QString&)), this ,SLOT(commented(QString&)));
+	dialog->show();
+}
+
+void FacebookPostWidget::commented(QString& message)
+{
+	QString postId = currentPost()->postId;
+	QString path = QString("/%1/comments").arg(postId);
+	
+	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	
+	FacebookJob * job = new FacebookAddJob(path, acc->accessToken());;
+	
+	job->addQueryItem("message", message);
+	
+    connect( job, SIGNAL(result(KJob*)), this, SLOT(slotCommented(KJob*)) );
+    
+    job->start();
+}
+
+void FacebookPostWidget::slotCommented(KJob* job)
+{
+	FacebookJob * fJob = dynamic_cast<FacebookAddJob *>( job ) ;
+
+	if ( !fJob-> error() || fJob->error() == KJob::UserDefinedError   )
+	{
+		updateCommentCount();
+	}
+	
+	else 
+	{
+		Choqok::NotifyManager::error(fJob->errorString(), i18n("Failed to Comment on Post"));
+	}
+}
+
+void FacebookPostWidget::updateCommentCount()
+{
+	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	GetCommentsJob* getJob = new GetCommentsJob(currentPost()->postId, acc->accessToken());
+	connect( getJob, SIGNAL(result(KJob*)), this, SLOT(slotUpdateCommentCount(KJob*)) );
+    getJob->start();
+}
+
+void FacebookPostWidget::slotUpdateCommentCount(KJob * job)
+{
+	GetCommentsJob *getJob = dynamic_cast<GetCommentsJob *>( job );
+	
+	if ( getJob-> error() )
+	{
+		Choqok::NotifyManager::error(getJob->errorString(), i18n("Failed to Update Comment Count"));
+	}
+	
+	else 
+	{
+		FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+		
+		post->commentCount = QString::number(getJob->commentCount());
+		updateLikeAndCommentCounts();
+	}
+	
 }
 
 void FacebookPostWidget::slotViewComments ()

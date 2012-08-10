@@ -18,6 +18,7 @@ IF(KFacebook_FOUND)
     facebookviewdialog.cpp
     facebookwhoiswidget.cpp
     facebookcomposerwidget.cpp
+    facebookcommentdialog.cpp
     )
 
     kde4_add_ui_files(choqok_facebook_SRCS
