@@ -201,8 +201,10 @@ QList< Choqok::Post* > FacebookMicroBlog::loadTimeline(Choqok::Account* account,
             st->iconUrl = grp.readEntry( "iconUrl", QString() );            
             //st->properties = grp.readEntry( "properties", QList<PropertyInfoPtr>() );            
             st->likeCount = grp.readEntry( "likeCount", QString() );
+            st->likeString = grp.readEntry( "likeString", QString() );
             st->story = grp.readEntry( "story", QString() );
             st->commentCount = grp.readEntry( "commentCount", QString() );
+            st->likeString = grp.readEntry( "commentString", QString() );
             st->appName = grp.readEntry( "appName", QString() );                        
             st->appId = grp.readEntry( "appId", QString() );                                    
             st->updateDateTime = grp.readEntry( "updateDateTime", QDateTime::currentDateTime() );            
@@ -254,8 +256,10 @@ void FacebookMicroBlog::saveTimeline(Choqok::Account* account, const QString& ti
         grp.writeEntry( "description", post->description );
         grp.writeEntry( "iconUrl", post->iconUrl );
         grp.writeEntry( "likecount", post->likeCount );
+        grp.writeEntry( "likecount", post->likeString );
         grp.writeEntry( "story", post->story );
         grp.writeEntry( "commentcount", post->commentCount );
+        grp.writeEntry( "commentcount", post->commentString );
         grp.writeEntry( "appName", post->appName );
         grp.writeEntry( "appId", post->appId.toString() );
         grp.writeEntry( "updateDateTime", post->updateDateTime );
@@ -379,8 +383,14 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  post->type = assignOrNull(postInfo->type());
 	  post->source = assignOrNull(postInfo->source());
 	  post->likeCount = postInfo->likes().isNull() ?  "0" : QString::number(postInfo->likes()->count()); //+ " likes";
+	  QString likeString =  postInfo->likes().isNull() ? "" : createLikeString(postInfo->likes());
+	  likeString += " Click to see who all like this";   
+	  post->likeString = likeString;
 	  post->story = assignOrNull(postInfo->story());
 	  post->commentCount = postInfo->comments().isNull() ?  "0" : QString::number(postInfo->comments()->count()); // + " comments";
+	  QString commentString = postInfo->comments().isNull() ? "" : createCommentString(postInfo->comments());
+	  commentString += 	" Click to see all comments";
+	  post->commentString = commentString;
 	  post->appId = postInfo->application().isNull() ?  "" : postInfo->application()->id();
 	  post->appName = postInfo->application().isNull() ?  "" : postInfo->application()->name();
 	  post->creationDateTime = postInfo->createdTime().dateTime();
@@ -404,6 +414,82 @@ Choqok::User FacebookMicroBlog::toChoqokUser(UserInfoPtr userInfo) const
 	user->realName = userInfo->name();
 	
 	return *user;
+}
+
+QString FacebookMicroBlog::createLikeString(const LikeInfoPtr likes) const
+{
+	int count = likes->count();
+	QString string = "";
+	
+	QList<UserInfoPtr> users = likes->data();
+	
+	if (!users.isEmpty())
+	{
+		foreach ( UserInfoPtr user, users)
+		{
+			string += user->name();
+			if ( user == users[users.length() - 1] )
+			   string += "";
+			else if (users.length() > 1 && user == users[users.length() - 2] && count == users.length() )
+			   string += "and ";
+			else
+			   string  += ", ";
+		}
+	}
+	int diff = count - users.length();
+	
+	if ( diff > 0)
+	{
+		
+		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+	}
+	
+	if (count > 0)
+	{
+		string += " like";
+		
+		if (!( diff == 1 || count == 1) )
+		   string += "s";
+		
+		string += " this.";
+	}	
+
+	return string;
+}
+
+QString FacebookMicroBlog::createCommentString(const CommentInfoPtr comments) const
+{
+	int count = comments->count();
+	QString string = "";
+	
+	QList<CommentDataPtr> list = comments->data();
+	
+	if (!list.isEmpty())
+	{
+		foreach ( CommentDataPtr comment, list)
+		{
+			string += comment->from()->name();
+			
+			if ( comment == list[list.length() - 1] )
+			   string += "";
+			else if (list.length() > 1 && comment == list[list.length() - 2] && count == list.length() )
+			   string += "and ";
+			else
+			   string  += ", ";
+		}
+	}
+	int diff = count - list.length();
+	
+	if ( diff > 0)
+	{
+		
+		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+	}
+	
+	if ( count > 0)
+	  string += " commented on this.";
+	  
+	return string;
 }
 /*
 QString FacebookMicroBlog::prepareStatus(const FacebookPost * post) const

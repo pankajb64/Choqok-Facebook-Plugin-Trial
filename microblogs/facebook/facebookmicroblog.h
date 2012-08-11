@@ -68,7 +68,11 @@ class FacebookMicroBlog : public Choqok::MicroBlog
 
   /*Q_SIGNALS:
     virtual void timelineDataReceived(Choqok::Account *theAccount, const QString &timelineName, QList<Choqok::Post*> data );*/
-		
+
+protected:
+    virtual QString createLikeString(const LikeInfoPtr likes) const;
+    virtual QString createCommentString(const CommentInfoPtr comments) const;	
+   	
 protected  slots :
   void slotCreatePost(KJob* job);
   void slotTimeLineLoaded(KJob *job);

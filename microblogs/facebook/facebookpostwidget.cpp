@@ -305,6 +305,7 @@ void FacebookPostWidget::slotUpdateUserLike(KJob* job)
 	else 
 	{
 		currentPost()->isFavorited = getJob->userLikes();
+		likeUrl = getJob->href();
 		updateFavStat();
 	}
 }
@@ -324,6 +325,7 @@ void FacebookPostWidget::updateLikeAndCommentCounts()
 		btnViewLikes->setText(likeCount + " ");
 		btnViewLikes->setIconSize(QSize(0,0));
 		btnViewLikes->setMinimumSize(QSize(likeCount.length() * 10, 20));
+		btnViewLikes->setToolTip(post->likeString);
     }
     
     if ( btnViewComments)
@@ -331,6 +333,7 @@ void FacebookPostWidget::updateLikeAndCommentCounts()
 		btnViewComments->setText(commentCount + " ");
 		btnViewComments->setIconSize(QSize(0,0));    
 		btnViewComments->setMinimumSize(QSize(commentCount.length() * 10, 20));
+		btnViewComments->setToolTip(post->commentString);
 	}
 }
 void FacebookPostWidget::slotLike()
@@ -432,7 +435,9 @@ void FacebookPostWidget::slotUpdateLikeCount(KJob * job)
 
 void FacebookPostWidget::slotViewLikes()
 {
-	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+	QUrl url(likeUrl);
+	FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
+	fdialog->start();
 }
 
 void FacebookPostWidget::slotComment()
@@ -503,7 +508,13 @@ void FacebookPostWidget::slotUpdateCommentCount(KJob * job)
 
 void FacebookPostWidget::slotViewComments ()
 {
-	KMessageBox::sorry(choqokMainWindow, i18n("Not Supported"));
+	QStringList list = currentPost()->postId.split("_");
+	QString postId = list[1];
+	QString userId = list[0];
+	QString urlString = QString("https://www.facebook.com/%1/posts/%2#contentArea").arg(userId).arg(postId);
+	QUrl url(urlString);
+	FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
+	fdialog->start();
 }
 bool FacebookPostWidget::isRemoveAvailable() 
 {

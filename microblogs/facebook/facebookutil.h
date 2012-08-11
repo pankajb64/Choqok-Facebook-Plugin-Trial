@@ -30,5 +30,4 @@ QString assignOrNull(QString s);
 
 QString getImageUrl(const QString& linkUrl);
 
-enum ShowType { UserInfo, Likes};
 #endif

@@ -25,12 +25,12 @@
 #include <KAnimatedButton>
 #include <KStatusBar>
 
-FacebookWhoisWidget::FacebookWhoisWidget(FacebookAccount* theAccount, const QString& uId, const Choqok::Post* post, /*ShowType type,*/ QWidget* parent) : QFrame(parent)
+FacebookWhoisWidget::FacebookWhoisWidget(FacebookAccount* theAccount, const QString& uId, const Choqok::Post* post, QWidget* parent) : QFrame(parent)
 {
 	currentAccount = theAccount;
 	currentPost = post;
 	userId = uId;
-	//mType = type;
+	
 
 	setAttribute(Qt::WA_DeleteOnClose);
     loadUserInfo();

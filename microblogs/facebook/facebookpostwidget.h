@@ -80,5 +80,6 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     private:
     
     QString prepareLink (QString& link, QString& title, QString& caption, QString& description, QString& type ) const;
+    QString likeUrl;
 };
 #endif
