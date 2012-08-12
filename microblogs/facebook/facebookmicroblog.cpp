@@ -49,6 +49,7 @@
 #include <KAction>
 #include <QMenu>
 #include "facebookviewdialog.h"
+#include "facebookutil.h"
 
 K_PLUGIN_FACTORY( MyPluginFactory, registerPlugin < FacebookMicroBlog > (); )
 K_EXPORT_PLUGIN( MyPluginFactory( "choqok_facebook" ) )
@@ -204,7 +205,8 @@ QList< Choqok::Post* > FacebookMicroBlog::loadTimeline(Choqok::Account* account,
             st->likeString = grp.readEntry( "likeString", QString() );
             st->story = grp.readEntry( "story", QString() );
             st->commentCount = grp.readEntry( "commentCount", QString() );
-            st->likeString = grp.readEntry( "commentString", QString() );
+            st->commentString = grp.readEntry( "commentString", QString() );
+            st->propertyString = grp.readEntry( "propertyString", QString() );
             st->appName = grp.readEntry( "appName", QString() );                        
             st->appId = grp.readEntry( "appId", QString() );                                    
             st->updateDateTime = grp.readEntry( "updateDateTime", QDateTime::currentDateTime() );            
@@ -255,11 +257,12 @@ void FacebookMicroBlog::saveTimeline(Choqok::Account* account, const QString& ti
         grp.writeEntry( "caption", post->caption ); 
         grp.writeEntry( "description", post->description );
         grp.writeEntry( "iconUrl", post->iconUrl );
-        grp.writeEntry( "likecount", post->likeCount );
-        grp.writeEntry( "likecount", post->likeString );
+        grp.writeEntry( "likeCount", post->likeCount );
+        grp.writeEntry( "likeString", post->likeString );
         grp.writeEntry( "story", post->story );
-        grp.writeEntry( "commentcount", post->commentCount );
-        grp.writeEntry( "commentcount", post->commentString );
+        grp.writeEntry( "commentCount", post->commentCount );
+        grp.writeEntry( "commentString", post->commentString );
+        grp.writeEntry( "propertyString", post->propertyString );
         grp.writeEntry( "appName", post->appName );
         grp.writeEntry( "appId", post->appId.toString() );
         grp.writeEntry( "updateDateTime", post->updateDateTime );
@@ -296,7 +299,9 @@ void FacebookMicroBlog::slotTimeLineLoaded(KJob *job)
      
     }else {
 	const QString h = "Home";
-        emit timelineDataReceived( acc, h, toChoqokPost(((PostsListJob *)job)->posts() ));
+	   QList<Choqok::Post*>list = toChoqokPost(acc, ((PostsListJob *)job)->posts() );
+	   //QList<Choqok::Post>& l = list;
+        emit timelineDataReceived( acc, h, reverseList(list));
     }
 }
 void FacebookMicroBlog::aboutToUnload()
@@ -321,7 +326,7 @@ QString FacebookMicroBlog::facebookUrl(Choqok::Account* acc, const QString& user
 }
 
 
-QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
+QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(FacebookAccount* account, PostInfoList mPosts) const
 {
 /*
   QList<Choqok::Post *> list;
@@ -363,7 +368,7 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
   }
   */
   
-  QList<Choqok::Post*> list;
+  QList<Choqok::Post*> list ;
   PostInfoPtr p;
   
   foreach ( p, mPosts)
@@ -371,7 +376,7 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  PostInfo * postInfo = p.data();
 	  FacebookPost * post = new FacebookPost ();
 	  post->postId = assignOrNull(postInfo->id());
-	  post->author = toChoqokUser(postInfo->from());
+	  post->author = toChoqokUser( account, postInfo->from());
 	  post->author.profileImageUrl = "https://graph.facebook.com/" + postInfo->from()->id() + "/picture" ; 
 	  post->content = assignOrNull(postInfo->message());
 	  post->link = assignOrNull(postInfo->link());
@@ -383,19 +388,20 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
 	  post->type = assignOrNull(postInfo->type());
 	  post->source = assignOrNull(postInfo->source());
 	  post->likeCount = postInfo->likes().isNull() ?  "0" : QString::number(postInfo->likes()->count()); //+ " likes";
-	  QString likeString =  postInfo->likes().isNull() ? "" : createLikeString(postInfo->likes());
+	  QString likeString =  postInfo->likes().isNull() ? "" : createLikeString(account, postInfo->likes());
 	  likeString += " Click to see who all like this";   
 	  post->likeString = likeString;
 	  post->story = assignOrNull(postInfo->story());
 	  post->commentCount = postInfo->comments().isNull() ?  "0" : QString::number(postInfo->comments()->count()); // + " comments";
-	  QString commentString = postInfo->comments().isNull() ? "" : createCommentString(postInfo->comments());
+	  QString commentString = postInfo->comments().isNull() ? "" : createCommentString(account, postInfo->comments());
 	  commentString += 	" Click to see all comments";
 	  post->commentString = commentString;
+	  post->propertyString = postInfo->properties().isEmpty() ? "" : createPropertyString(postInfo->properties());
 	  post->appId = postInfo->application().isNull() ?  "" : postInfo->application()->id();
 	  post->appName = postInfo->application().isNull() ?  "" : postInfo->application()->name();
 	  post->creationDateTime = postInfo->createdTime().dateTime();
 	  post->updateDateTime = postInfo->updatedTime().dateTime();
-	  
+	  post->isRead = (postInfo->from()->id() == account->id());
   
       //post->content = prepareStatus(post);
       
@@ -405,92 +411,18 @@ QList<Choqok::Post *> FacebookMicroBlog::toChoqokPost(PostInfoList mPosts) const
   return list;
 }
 
-Choqok::User FacebookMicroBlog::toChoqokUser(UserInfoPtr userInfo) const
+Choqok::User FacebookMicroBlog::toChoqokUser(FacebookAccount* account, UserInfoPtr userInfo) const
 {
 	Choqok::User * user = new Choqok::User();
 	
 	user->userId = userInfo->id();
 	user->userName = userInfo->username().isNull() ? userInfo->id() : userInfo->username() ;
-	user->realName = userInfo->name();
+	user->realName = (account->id() == userInfo->id()) ? "You" : userInfo->name();
 	
 	return *user;
 }
 
-QString FacebookMicroBlog::createLikeString(const LikeInfoPtr likes) const
-{
-	int count = likes->count();
-	QString string = "";
-	
-	QList<UserInfoPtr> users = likes->data();
-	
-	if (!users.isEmpty())
-	{
-		foreach ( UserInfoPtr user, users)
-		{
-			string += user->name();
-			if ( user == users[users.length() - 1] )
-			   string += "";
-			else if (users.length() > 1 && user == users[users.length() - 2] && count == users.length() )
-			   string += "and ";
-			else
-			   string  += ", ";
-		}
-	}
-	int diff = count - users.length();
-	
-	if ( diff > 0)
-	{
-		
-		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
-	}
-	
-	if (count > 0)
-	{
-		string += " like";
-		
-		if (!( diff == 1 || count == 1) )
-		   string += "s";
-		
-		string += " this.";
-	}	
 
-	return string;
-}
-
-QString FacebookMicroBlog::createCommentString(const CommentInfoPtr comments) const
-{
-	int count = comments->count();
-	QString string = "";
-	
-	QList<CommentDataPtr> list = comments->data();
-	
-	if (!list.isEmpty())
-	{
-		foreach ( CommentDataPtr comment, list)
-		{
-			string += comment->from()->name();
-			
-			if ( comment == list[list.length() - 1] )
-			   string += "";
-			else if (list.length() > 1 && comment == list[list.length() - 2] && count == list.length() )
-			   string += "and ";
-			else
-			   string  += ", ";
-		}
-	}
-	int diff = count - list.length();
-	
-	if ( diff > 0)
-	{
-		
-		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
-	}
-	
-	if ( count > 0)
-	  string += " commented on this.";
-	  
-	return string;
-}
 /*
 QString FacebookMicroBlog::prepareStatus(const FacebookPost * post) const
 {

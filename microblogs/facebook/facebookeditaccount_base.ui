@@ -81,7 +81,7 @@ p, li { white-space: pre-wrap; }
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Click the below button, If everything goes well, you'll pointed to Facebook website to allow access to Choqok.</string>
+         <string>Click the below button, If everything goes well, you'll be pointed to Facebook website to allow access to Choqok.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>

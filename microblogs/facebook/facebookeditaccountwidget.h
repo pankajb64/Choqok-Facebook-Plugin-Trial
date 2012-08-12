@@ -90,6 +90,8 @@ protected:
     //QProgressBar *progress;
     QString username;
     QString token;
+    QString name;
+    QString id;
     //QOAuth::Interface *qoauth;
 
 };

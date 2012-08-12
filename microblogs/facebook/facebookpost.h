@@ -41,12 +41,12 @@ class FacebookPost : public Choqok::Post
 	QString caption;
 	QString description;
 	QString iconUrl;
-	//QList<PropertyInfoPtr> properties;
 	QString likeCount;
 	QString likeString;
 	QString story;
 	QString commentCount;
 	QString commentString;
+	QString propertyString;
 	QString appName;
 	ChoqokId appId;
 	QDateTime updateDateTime;

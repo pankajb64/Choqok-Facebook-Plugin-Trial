@@ -56,7 +56,9 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     virtual void slotLiked(KJob* job);
     virtual void slotCommented(KJob* job);
     virtual void slotUpdateLikeCount(KJob* job);
+    virtual void slotUpdateLikeString(KJob* job);
     virtual void slotUpdateCommentCount(KJob* job);
+    virtual void slotUpdateCommentString(KJob* job);
     virtual void slotUpdateUserLike(KJob* job);
     void commented(QString& message);
     
@@ -72,8 +74,12 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     virtual void setFavorite();
     virtual void updateFavStat();
     virtual void updateLikeCount();
+    virtual void updateLikeString();
     virtual void updateCommentCount();
+    virtual void updateCommentString();
     virtual void updateUserLike();
+    virtual void reloadLikesAndComments();
+    virtual bool isOwnPost();
     
     static const KIcon unFavIcon;
     

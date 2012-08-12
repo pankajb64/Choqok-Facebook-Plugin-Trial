@@ -23,6 +23,7 @@ along with this program; if not, see http://www.gnu.org/licenses/
 
 #include "facebookutil.h"
 #include <KUrl>
+#include <QUrl>
 
 QString assignOrNull(QString s)
 {
@@ -31,9 +32,115 @@ QString assignOrNull(QString s)
 
 QString getImageUrl(const QString& linkUrl)
 {
-	KUrl imgU(linkUrl);
-	imgU.setScheme("img");
-	QString imgUrl = imgU.prettyUrl();
+	QUrl url(linkUrl);
+	url.setScheme("img");
+	QString imgUrl = url.toString();
 	
 	return imgUrl;
 }
+
+QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes) 
+{
+	int count = likes->count();
+	QString string = "";
+	
+	int ct = 0;
+	
+	QList<UserInfoPtr> users = likes->data();
+	
+	if (!users.isEmpty())
+	{
+		foreach ( UserInfoPtr user, users)
+		{
+			string += (account->id() == user->id()) ? "You" : user->name();
+			if ( user == users[users.length() - 1] )
+			   string += "";
+			else if (users.length() > 1 && user == users[users.length() - 2] && count == users.length() )
+			   string += " and ";
+			else
+			   string  += ", ";
+			
+			ct++;
+			
+			if (ct == 4) ///max 4 suggestions
+			   break;   
+		}
+	}
+	int diff = count - ct;
+	
+	if ( diff > 0)
+	{
+		
+		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+	}
+	
+	if (count > 0)
+	{
+		string += " like";
+		
+		if (( diff == 1 || count == 1) && !string.startsWith("You" ) )
+		   string += "s";
+		
+		string += " this.";
+	}	
+
+	return string;
+}
+
+QString createCommentString(const FacebookAccount* account, const CommentInfoPtr comments) 
+{
+	int count = comments->count();
+	QString string = "";
+	
+	QList<CommentDataPtr> list = comments->data();
+	int ct = 0;
+	
+	if (!list.isEmpty())
+	{
+		foreach ( CommentDataPtr comment, list)
+		{
+			string += (account->id() == comment->from()->id()) ? "You" : comment->from()->name();
+			
+			if ( comment == list[list.length() - 1] )
+			   string += "";
+			else if (list.length() > 1 && comment == list[list.length() - 2] && count == list.length() )
+			   string += " and ";
+			else
+			   string  += ", ";
+			ct++;
+			
+			if ( ct == 4) ///max 4 suggestions
+			  break;   
+		}
+	}
+	int diff = count - ct;
+	
+	if ( diff > 0)
+	{
+		
+		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+	}
+	
+	if ( count > 0)
+	  string += " commented on this.";
+	  
+	return string;
+}
+
+
+QString createPropertyString(const QList<PropertyInfoPtr> properties)
+{
+	QString string = "";
+	
+	foreach(PropertyInfoPtr property, properties)
+	{
+		QUrl url(property->href());
+		url.setScheme("property");
+		QString href = url.toString();
+		QString name  = property->name().trimmed();
+		string += QString("%1 %4 <a href=\"%3\">%2</a><br/>").arg(name).arg(property->text()).arg(href).arg(name.isEmpty() ? "" : " : " );
+	}
+	return string;
+}
+
+

@@ -205,6 +205,7 @@ protected:
     virtual QString formatDateTime( const KDateTime &time );
     virtual bool isResendAvailable() ;
     virtual bool isRemoveAvailable() ;
+    virtual bool isOwnPost();
     
     /**
     @brief Create and Add a new button to widget

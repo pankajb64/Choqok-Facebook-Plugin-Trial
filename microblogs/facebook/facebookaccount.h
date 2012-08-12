@@ -25,7 +25,7 @@
 #define FACEBOOKACCOUNT_H
 
 #include "account.h"
-
+#include <KJob>
 
 
 class FacebookMicroBlog;
@@ -39,7 +39,13 @@ public:
 
     void setAccessToken(const QString& accessToken);
     QString accessToken() const ;
+    virtual void setName(const QString& name);
+    virtual QString name() const;
+    virtual void setId(const QString& id);
+    virtual QString id() const;
     virtual void writeConfig();
+    
+	
 private:
     class Private;
     Private * const d;

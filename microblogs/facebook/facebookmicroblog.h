@@ -56,8 +56,8 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual void updateTimelines(Choqok::Account* theAccount);
     virtual Choqok::TimelineInfo* timelineInfo(const QString& timelineName);
     virtual void aboutToUnload();
-    virtual QList <Choqok::Post * > toChoqokPost(PostInfoList mPosts) const;
-    virtual Choqok::User toChoqokUser(UserInfoPtr userInfo) const;
+    virtual QList <Choqok::Post * > toChoqokPost(FacebookAccount* account, PostInfoList mPosts) const;
+    virtual Choqok::User toChoqokUser(FacebookAccount* account, UserInfoPtr userInfo) const;
     virtual QString profileUrl(Choqok::Account* account, const QString& username) const;
     virtual QString postUrl(Choqok::Account* account, const QString& username, const QString& postId) const;
     virtual QString facebookUrl(Choqok::Account* account, const QString& username) const;
@@ -69,10 +69,10 @@ class FacebookMicroBlog : public Choqok::MicroBlog
   /*Q_SIGNALS:
     virtual void timelineDataReceived(Choqok::Account *theAccount, const QString &timelineName, QList<Choqok::Post*> data );*/
 
-protected:
-    virtual QString createLikeString(const LikeInfoPtr likes) const;
-    virtual QString createCommentString(const CommentInfoPtr comments) const;	
-   	
+/*protected:
+    virtual QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes) const;
+    virtual QString createCommentString(const FacebookAccount* account, const CommentInfoPtr comments) const;	
+  */ 	
 protected  slots :
   void slotCreatePost(KJob* job);
   void slotTimeLineLoaded(KJob *job);

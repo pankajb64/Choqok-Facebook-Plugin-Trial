@@ -24,10 +24,30 @@ along with this program; if not, see http://www.gnu.org/licenses/
 #ifndef FACEBOOKUTIL_H
 #define FACEBOOKUTIL_H
 
-#include<QString>
+#include <QString>
+#include "facebookaccount.h"
+#include <kfacebook/likeinfo.h>
+#include <kfacebook/commentinfo.h>
+#include <kfacebook/propertyinfo.h>
+#include <algorithm>
+
+using namespace KFacebook;
 
 QString assignOrNull(QString s);
 
 QString getImageUrl(const QString& linkUrl);
 
+QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes) ;
+
+QString createCommentString(const FacebookAccount* account, const CommentInfoPtr comments) ;
+
+QString createPropertyString(const QList<PropertyInfoPtr> properties);
+
+template <typename T>
+QList<T> reverseList( QList<T>&  in ) {
+    QList<T> result;
+    result.reserve( in.size() ); // reserve is new in Qt 4.7
+    std::reverse_copy( in.begin(), in.end(), std::back_inserter( result ) );
+    return result;
+}
 #endif

@@ -41,6 +41,7 @@
 #include <kfacebook/getlikesjob.h>
 #include <kfacebook/getcommentsjob.h>
 #include "facebookcommentdialog.h"
+#include <kfacebook/postjob.h>
 
 using namespace KFacebook;
 
@@ -57,8 +58,9 @@ QString FacebookPostWidget::generateSign ()
 	
     QString ss = "";
  
+   ss += isOwnPost() ? "" : "<b>";
     
-    ss = "<b><a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), post->author.userId ) 
+    ss += "<a href='"+ currentAccount()->microblog()->profileUrl( currentAccount(), post->author.userId ) 
 		 +      +"' title=\"" +
     post->author.realName + "\">" ;
 		
@@ -66,7 +68,9 @@ QString FacebookPostWidget::generateSign ()
 			ss += "Anonymous";
 		else
 			ss += post->author.realName;
-		ss += "</a> - </b> via";
+		ss += "</a> - ";
+		ss += isOwnPost() ? "" : "</b>";
+		ss +=  "via";
 
     //QStringList list = currentPost()->postId.split("_");
     
@@ -115,18 +119,36 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
         status += prepareLink(link, title, caption, description, post->type) + "<br/>";
     if( !content.isEmpty() )
         status += content;
+    
+    if(!post->propertyString.isEmpty())
+    {
+		status += "<br/>" + post->propertyString + "<br/>";    
+	}
 
-    /* You cannot show an image this way in a QTextBrowser
-     * You need to download it first, via Choqok::MediaManager and then add it as a resource
-     * just like what we did in Image preview plugin.
-     * I put the false in if, to prevent it to show for now*/
+    
 	if (!post->iconUrl.isEmpty())
 	{
-      downloadImage(post->iconUrl);
-      QString imgUrl = getImageUrl(post->iconUrl);
-      status += QString("<br/><a href = \"%1\"> <img align='left' src = \"%2\"/> </a><br/>").arg(imgUrl).arg(imgUrl);
+	  QString iconUrlString = post->iconUrl;
+	  QString urlString = "";
+	  QUrl iconUrl(iconUrlString);
+	  //status += QString("<br/>Host - %1, Path - %2<br/>").arg(iconUrl.host()).arg(iconUrl.path());
+	  
+	  /// Application Images and Images Outside Fb have to be dealt with seperately because Choqok::MediaManager cant download imaged from encoded URLS (huh)
+	  if (iconUrl.host().contains("www.facebook.com") && iconUrl.path().contains("app_full_proxy.php"))
+	  {
+		  iconUrlString = QUrl::fromPercentEncoding(iconUrl.queryItemValue("src").toAscii());
+	  }
+	  if(iconUrl.host().contains("fbexternal-a.akamaihd.net") && iconUrl.path().contains("safe_image.php"))
+	  {
+		  iconUrlString = QUrl::fromPercentEncoding(iconUrl.queryItemValue("url").toAscii());
+	  }
+	  
+      downloadImage(iconUrlString);
+      QString imgUrl = getImageUrl(iconUrlString);
+      //status += iconUrlString + "<br/> " + imgUrl + "<br/> ";
+      status += QString("<br/><a href = \"%1\" title =\"%1\"> <img align='left'  src = \"%2\"/> </a><br/>").arg(imgUrl).arg(imgUrl);
     }
-
+    
 	  
    //QString status = Choqok::UI::PostWidget::prepareStatus(txt);
    kDebug()<< status;
@@ -145,9 +167,12 @@ QString FacebookPostWidget::prepareLink(QString& link, QString& title, QString& 
         }
     }    
     QString link_title = link;
+    QUrl url(link);
+    url.setScheme("title");
+    QString title_link = url.toString();
     if( !caption.isEmpty() )
         link_title = caption;
-	QString linkHtml = QString("<a href =\"%1\" title='%3' ><b> %2 </b></a>").arg(link).arg(title).arg(link_title);
+	QString linkHtml = QString("<a href =\"%1\" title='%3' ><b> %2 </b></a>").arg(title_link).arg(title).arg(link_title);
     if( !description.isEmpty() )
         linkHtml.append(QString("<br/>%1").arg(description));
 	return linkHtml;
@@ -174,6 +199,7 @@ void FacebookPostWidget::slotImageFetched(const QString& linkUrl, const QPixmap&
    
    Choqok::UI::PostWidget::mainWidget()->document()->addResource(QTextDocument::ImageResource, imgUrl, pix);
    
+   //Choqok::NotifyManager::error(linkUrl, i18n("iconUrlString"));
    /*QString content = currentPost()->content;
    
    content += QString("<a href = \"%1\"> <img src = \"%2\"/> </a>").arg(linkUrl).arg(imgUrl);
@@ -203,7 +229,8 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
 	else if(scheme == "user")
 	 {
         KMenu menu;
-        KAction * info = new KAction( KIcon("user-identity"), i18nc("Who is user", "Who is %1", currentPost()->author.realName), &menu );
+        QString is = isOwnPost() ? "are" : "is";
+        KAction * info = new KAction( KIcon("user-identity"), i18nc("Who is user", "Who %2 %1", currentPost()->author.realName, is), &menu );
         KAction * openInBrowser = new KAction(KIcon("applications-internet"), i18nc("Open profile page in browser", "Open profile in browser"), &menu);
 
         menu.addAction(info);
@@ -225,7 +252,14 @@ void FacebookPostWidget::checkAnchor(const QUrl &link)
             Choqok::openUrl( QUrl( blog->facebookUrl(currentAccount(), link.host()) ) );
             return;
         }
-	}else
+	} else if ( scheme == "property" || scheme == "title")
+	{
+		QUrl url(link.toString());
+		url.setScheme("http");
+		FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
+		fdialog->start();
+	}
+	else
         Choqok::UI::PostWidget::checkAnchor(link);
 }
 
@@ -339,7 +373,7 @@ void FacebookPostWidget::updateLikeAndCommentCounts()
 void FacebookPostWidget::slotLike()
 {
 	
-	
+	setReadWithSignal();
 	QString postId = currentPost()->postId;
 	QString path = QString("/%1/likes").arg(postId);
 	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
@@ -370,8 +404,7 @@ void FacebookPostWidget::slotLiked( KJob* job)
 	if ( !fJob-> error() || fJob->error() == KJob::UserDefinedError   )
 	{
 		setFavorite();
-		updateLikeCount();
-		
+		reloadLikesAndComments();
 	}
 	
 	else 
@@ -435,14 +468,16 @@ void FacebookPostWidget::slotUpdateLikeCount(KJob * job)
 
 void FacebookPostWidget::slotViewLikes()
 {
+	setReadWithSignal();
 	QUrl url(likeUrl);
 	FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
 	fdialog->start();
+	reloadLikesAndComments();
 }
 
 void FacebookPostWidget::slotComment()
 {
-	
+	setReadWithSignal();
 	FacebookCommentDialog* dialog = new FacebookCommentDialog(this);
 	connect (dialog, SIGNAL(commented(QString&)), this ,SLOT(commented(QString&)));
 	dialog->show();
@@ -470,7 +505,8 @@ void FacebookPostWidget::slotCommented(KJob* job)
 
 	if ( !fJob-> error() || fJob->error() == KJob::UserDefinedError   )
 	{
-		updateCommentCount();
+		reloadLikesAndComments();
+		
 	}
 	
 	else 
@@ -506,8 +542,72 @@ void FacebookPostWidget::slotUpdateCommentCount(KJob * job)
 	
 }
 
+void FacebookPostWidget::updateLikeString()
+{
+	FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+	PostJob* job = new PostJob(currentPost()->postId, acc->accessToken());
+	job->addQueryItem("fields", "likes");
+	connect(job, SIGNAL(result(KJob*)), this, SLOT(slotUpdateLikeString(KJob*)) );
+	job->start();
+}
+
+void FacebookPostWidget::slotUpdateLikeString(KJob * job)
+{
+	PostJob *postJob = dynamic_cast<PostJob *>( job );
+	
+	if ( postJob-> error() )
+	{
+		Choqok::NotifyManager::error(postJob->errorString(), i18n("Failed to Update Like String"));
+	}
+	
+	else 
+	{
+		FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+		FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+		
+		LikeInfoPtr likes = postJob->postInfo()[0]->likes();
+		QString likeString = likes.isNull() ? "" : createLikeString(acc, likes);
+		likeString += " Click to see who all like this";
+		post->likeString =  likeString;
+		updateLikeAndCommentCounts();
+	}
+	
+}
+
+void FacebookPostWidget::updateCommentString()
+{
+	FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+	PostJob* job = new PostJob(currentPost()->postId, acc->accessToken());
+	job->addQueryItem("fields", "comments");
+	connect(job, SIGNAL(result(KJob*)), this, SLOT(slotUpdateCommentString(KJob*)) );
+	job->start();
+}
+
+void FacebookPostWidget::slotUpdateCommentString(KJob * job)
+{
+	PostJob *postJob = dynamic_cast<PostJob *>( job );
+	
+	if ( postJob-> error() )
+	{
+		Choqok::NotifyManager::error(postJob->errorString(), i18n("Failed to Update Comment String"));
+	}
+	
+	else 
+	{
+		FacebookPost* post = static_cast<FacebookPost*>(currentPost());
+		FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+		
+		CommentInfoPtr comments = postJob->postInfo()[0]->comments();
+		QString commentString =  comments.isNull()  ? "" : createCommentString(acc, comments);
+		commentString += " Click to see who all comments"; 
+		post->commentString =  commentString   ;
+		updateLikeAndCommentCounts();
+	}
+	
+}
 void FacebookPostWidget::slotViewComments ()
 {
+	setReadWithSignal();
 	QStringList list = currentPost()->postId.split("_");
 	QString postId = list[1];
 	QString userId = list[0];
@@ -515,7 +615,17 @@ void FacebookPostWidget::slotViewComments ()
 	QUrl url(urlString);
 	FacebookViewDialog* fdialog = new FacebookViewDialog(url, this);
 	fdialog->start();
+	reloadLikesAndComments();
 }
+
+void FacebookPostWidget::reloadLikesAndComments()
+{
+	updateLikeCount();
+	updateLikeString();
+	updateCommentCount();
+	updateCommentString();
+}
+
 bool FacebookPostWidget::isRemoveAvailable() 
 {
 	return false;
@@ -524,4 +634,10 @@ bool FacebookPostWidget::isRemoveAvailable()
 bool FacebookPostWidget::isResendAvailable() 
 {
 	return false;
+}
+
+bool FacebookPostWidget::isOwnPost()
+{
+	FacebookAccount* account = qobject_cast<FacebookAccount*>(currentAccount());
+	return account->id().compare( currentPost()->author.userId, Qt::CaseInsensitive ) == 0;
 }

@@ -24,17 +24,21 @@
 #include "facebookaccount.h"
 #include "facebookmicroblog.h"
 #include <KDebug>
-
+#include <kfacebook/userinfojob.h>
 class FacebookAccount::Private
 {
 public:
     QString accessToken;
+    QString id;
+    QString name;
 };
 
 FacebookAccount::FacebookAccount(FacebookMicroBlog* parent, const QString& alias) : Account(parent, alias), d(new Private)
 {
     kDebug()<<alias;
-   d->accessToken = configGroup()->readEntry("AccessToken", QString());	
+   d->accessToken = configGroup()->readEntry("AccessToken", QString());
+   d->id = configGroup()->readEntry("Id", QString());
+   d->name = configGroup()->readEntry("Name", QString());	
 }    
 
 FacebookAccount::~FacebookAccount()
@@ -45,6 +49,8 @@ FacebookAccount::~FacebookAccount()
 void FacebookAccount::writeConfig()
 {
     configGroup()->writeEntry ("AccessToken", d->accessToken);
+    configGroup()->writeEntry ("Name", d->name);
+    configGroup()->writeEntry ("Id", d->id);
     Choqok::Account::writeConfig();
     //configGroup()->sync();
     //emit modified(this);
@@ -58,6 +64,25 @@ void FacebookAccount::setAccessToken (const QString& accessToken)
 QString FacebookAccount::accessToken() const
 {
   return d->accessToken;
+}
+
+void FacebookAccount::setName (const QString& name)
+{
+  d->name = name;
+}
+
+QString FacebookAccount::name() const
+{
+  return d->name;
+}
+void FacebookAccount::setId (const QString& id)
+{
+  d->id = id;
+}
+
+QString FacebookAccount::id() const
+{
+  return d->id;
 }
 
 #include "facebookaccount.moc"

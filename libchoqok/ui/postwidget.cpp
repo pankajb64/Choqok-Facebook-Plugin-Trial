@@ -117,7 +117,7 @@ PostWidget::PostWidget( Account* account, Choqok::Post* post, QWidget* parent/* 
 {
     setAttribute(Qt::WA_DeleteOnClose);
     _mainWidget->setFrameShape(QFrame::NoFrame);
-    if(currentAccount()->username().compare( currentPost()->author.userName, Qt::CaseInsensitive ) == 0 )
+    if(isOwnPost())
         d->mCurrentPost->isRead = true;
     d->mTimer.start( _MINUTE );
     connect( &d->mTimer, SIGNAL( timeout() ), this, SLOT( updateUi()) );
@@ -193,8 +193,11 @@ void PostWidget::initUi()
     setupUi();
     _mainWidget->document()->addResource( QTextDocument::ImageResource, QUrl("img://profileImage"),
                              MediaManager::self()->defaultImage() );
-                             
-     baseText = &otherText;                        
+
+     if ( isOwnPost() )
+       baseText = &ownText;
+     else
+       baseText = &otherText;                        
      
      if ( isRemoveAvailable() )
      {
@@ -312,7 +315,7 @@ bool PostWidget::isRead() const
 
 void PostWidget::setUiStyle()
 {
-    if (currentAccount()->username().compare( currentPost()->author.userName, Qt::CaseInsensitive ) == 0)
+    if (isOwnPost())
       setStyleSheet(ownStyle);
     else {
       if(currentPost()->isRead)
@@ -321,6 +324,11 @@ void PostWidget::setUiStyle()
         setStyleSheet(unreadStyle);
     }
     setHeight();
+}
+
+bool PostWidget::isOwnPost()
+{
+	return currentAccount()->username().compare( currentPost()->author.userName, Qt::CaseInsensitive ) == 0;
 }
 
 void PostWidget::setHeight()
