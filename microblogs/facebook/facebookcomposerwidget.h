@@ -49,6 +49,7 @@ protected slots:
     
 private:
     QString mediumToAttach;
+    QString mimeType;
     KPushButton *btnAttach;
     QPointer<QLabel> mediumName;
     QPointer<KPushButton> btnCancel;

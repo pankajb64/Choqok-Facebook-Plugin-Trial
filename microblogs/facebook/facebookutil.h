@@ -43,6 +43,8 @@ QString createCommentString(const FacebookAccount* account, const CommentInfoPtr
 
 QString createPropertyString(const QList<PropertyInfoPtr> properties);
 
+QString trimName(const QString name);
+
 template <typename T>
 QList<T> reverseList( QList<T>&  in ) {
     QList<T> result;

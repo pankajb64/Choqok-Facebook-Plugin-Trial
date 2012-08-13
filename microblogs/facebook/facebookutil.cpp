@@ -39,6 +39,8 @@ QString getImageUrl(const QString& linkUrl)
 	return imgUrl;
 }
 
+
+
 QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes) 
 {
 	int count = likes->count();
@@ -52,7 +54,7 @@ QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes
 	{
 		foreach ( UserInfoPtr user, users)
 		{
-			string += (account->id() == user->id()) ? "You" : user->name();
+			string += (account->id() == user->id()) ? "You" : trimName(user->name());
 			if ( user == users[users.length() - 1] )
 			   string += "";
 			else if (users.length() > 1 && user == users[users.length() - 2] && count == users.length() )
@@ -99,7 +101,7 @@ QString createCommentString(const FacebookAccount* account, const CommentInfoPtr
 	{
 		foreach ( CommentDataPtr comment, list)
 		{
-			string += (account->id() == comment->from()->id()) ? "You" : comment->from()->name();
+			string += (account->id() == comment->from()->id()) ? "You" : trimName(comment->from()->name());
 			
 			if ( comment == list[list.length() - 1] )
 			   string += "";
@@ -117,8 +119,10 @@ QString createCommentString(const FacebookAccount* account, const CommentInfoPtr
 	
 	if ( diff > 0)
 	{
-		
-		string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+		if (ct != 0)
+		  string += QString(" and %1 other%2").arg(diff).arg(diff > 1 ? "s " : " ");
+		else
+		  string += QString(" %1 people ").arg(diff);
 	}
 	
 	if ( count > 0)
@@ -143,4 +147,14 @@ QString createPropertyString(const QList<PropertyInfoPtr> properties)
 	return string;
 }
 
-
+QString trimName(const QString name)
+{
+	QString trimName = name;
+	
+	if (name.length() > 20 )
+	{
+		trimName = name.mid(17) + "...";
+	}
+	
+	return trimName;
+}

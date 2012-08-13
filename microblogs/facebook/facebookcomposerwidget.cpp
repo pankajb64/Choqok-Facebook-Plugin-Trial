@@ -31,15 +31,17 @@
 #include "composerwidget.h"
 #include "choqoktextedit.h"
 #include <KFileDialog>
+#include <KFileItem>
 
 FacebookComposerWidget::FacebookComposerWidget(Choqok::Account* account, QWidget* parent)
     : Choqok::UI::ComposerWidget(account, parent), btnAttach(0), mediumName(0), btnCancel(0)
 {
     editorLayout = qobject_cast<QGridLayout*>(editorContainer()->layout());
     btnAttach = new KPushButton(editorContainer());
-    btnAttach->setIcon(KIcon("mail-attachment"));
-    btnAttach->setToolTip(i18n("Attach a file"));
+    btnAttach->setIcon(KIcon("image-x-generic"));
+    btnAttach->setToolTip(i18n("Attach a photo/Video"));
     btnAttach->setMaximumWidth(btnAttach->height());
+    
     connect(btnAttach, SIGNAL(clicked(bool)), this, SLOT(selectMediumToAttach()));
     QVBoxLayout *vLayout = new QVBoxLayout;
     vLayout->addWidget(btnAttach);
@@ -110,6 +112,7 @@ void FacebookComposerWidget::selectMediumToAttach()
                                                       i18n("Select Media to Upload") );
     if( mediumToAttach.isEmpty() )
         return;
+    
     QString fileName = KUrl(mediumToAttach).fileName();
     if( !mediumName ){
         kDebug()<<fileName;
@@ -123,7 +126,8 @@ void FacebookComposerWidget::selectMediumToAttach()
         editorLayout->addWidget(mediumName, 1, 0);
         editorLayout->addWidget(btnCancel, 1, 1);
     }
-    mediumName->setText(i18n("Attaching <b>%1</b>", fileName));
+
+    mediumName->setText(i18n("Attaching <b>%1</b> mime type - <b>%2</b>", fileName, mimeType));
     editor()->setFocus();
 }
 

@@ -114,7 +114,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
     //status += post->likeCount + " , " + post->commentCount + " <br/> ";
     
     if( !story.isEmpty() )
-        status += story + " <br/> ";
+        status += "<b>" + story + "</b> <br/> ";
     if( !link.isEmpty() )
         status += prepareLink(link, title, caption, description, post->type) + "<br/>";
     if( !content.isEmpty() )
@@ -146,7 +146,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
       downloadImage(iconUrlString);
       QString imgUrl = getImageUrl(iconUrlString);
       //status += iconUrlString + "<br/> " + imgUrl + "<br/> ";
-      status += QString("<br/><a href = \"%1\" title =\"%1\"> <img align='left'  src = \"%2\"/> </a><br/>").arg(imgUrl).arg(imgUrl);
+      status += QString("<br/><a href = \"%1\" > <img align='left'  src = \"%2\"/> </a><br/>").arg(imgUrl).arg(imgUrl);
     }
     
 	  

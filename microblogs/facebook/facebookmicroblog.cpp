@@ -85,16 +85,17 @@ void FacebookMicroBlog::slotCreatePost(KJob* job)
 {
     FacebookAccount* acc = mJobsAccount.take(job);
     Choqok::Post* post = mJobsPost.take(job);
-    if ( post->isError ) {
+    if ( post->isError || job->error() ) {
                 
         kError() << "Server Error:" ;
+        Choqok::NotifyManager::error( job->errorString(), i18n("New post submitted successfully"));
         emit errorPost ( acc, post, Choqok::MicroBlog::ServerError, i18n ( "Creating the new post failed, with error" ), MicroBlog::Critical );
    } else {
        Choqok::NotifyManager::success(i18n("New post submitted successfully"));
        emit postCreated ( acc, post );
    }
    
-    emit postCreated ( acc, post );
+    //emit postCreated ( acc, post );
 }
 void FacebookMicroBlog::abortCreatePost(Choqok::Account* theAccount, Choqok::Post* post)
 {
@@ -470,15 +471,30 @@ void FacebookMicroBlog::createPostWithAttachment(Choqok::Account* theAccount, Ch
                                 i18n( "Uploading medium failed: cannot read the medium file." ) );
             return;
         }
-        ///Documentation: http://identi.ca/notice/17779990
+        ///Documentation: https://developers.facebook.com/docs/reference/api/photo/, https://developers.facebook.com/docs/reference/api/video/
         FacebookAccount* account = qobject_cast<FacebookAccount*>(theAccount);
-        QString uploadUrl = QString("https://graph.facebook.com/%1/photos").arg(post->author.userId);
+
+        QString mimeType = KMimeType::findByUrl( picUrl, 0, true )->name();
+        QByteArray fileContentType = mimeType.toUtf8();;
+        
+        QString uploadUrl;
+        if ( mimeType.contains("video"))
+          uploadUrl = QString("https://graph-video.facebook.com/%1/videos");
+        else  
+          uploadUrl = QString("https://graph.facebook.com/%1/photos");
+          
+        QString me = post->author.userId.compare("") == 0 ? QString("me") : post->author.userId;
+        uploadUrl = uploadUrl.arg(me);
         KUrl url(uploadUrl);
         
-        QByteArray fileContentType = KMimeType::findByUrl( picUrl, 0, true )->name().toUtf8();
+        
+        /*QUrl url(mediumToAttach);
+		KFileItem item(KFileItem::Unknown, KFileItem::Unknown, url, true);
+		mimeType = item.mimetype();*/
 
         QMap<QString, QByteArray> formdata;
         formdata["message"] = post->content.toUtf8();
+        //formdata["description"] = post->content.toUtf8();
         formdata["access_token"] = account->accessToken().toUtf8();
         //formdata["source"] = picData;
 
@@ -515,6 +531,11 @@ QMenu* FacebookMicroBlog::createActionsMenu(Choqok::Account* theAccount, QWidget
     directMessge->setData( theAccount->alias() );
     connect( directMessge, SIGNAL(triggered(bool)), SLOT(showPrivateMessageDialog()) );
     menu->addAction(directMessge);
+    
+    /*KAction *videoAttach = new KAction( KIcon("video-x-generic"), i18n("Upload a Video...."), menu );
+    videoAttach->setData( theAccount->alias() );
+    connect( videoAttach, SIGNAL(triggered(bool)), SLOT(showPrivateMessageDialog()) );
+    menu->addAction(videoAttach);*/
 
     return menu;
 }
