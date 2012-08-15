@@ -33,15 +33,15 @@
 #include "facebookutil.h"
 #include "facebookviewdialog.h"
 #include "facebookwhoiswidget.h"
-#include "facebookaccount.h"
 #include <KPushButton>
 #include <QtGui/QtGui>
 #include <QtGui/QLayout>
 #include <KMessageBox>
 #include <kfacebook/getlikesjob.h>
 #include <kfacebook/getcommentsjob.h>
-#include "facebookcommentdialog.h"
+#include "facebookinputdialog.h"
 #include <kfacebook/postjob.h>
+#include <kfacebook/notificationsmarkreadjob.h>
 
 using namespace KFacebook;
 
@@ -49,7 +49,14 @@ const KIcon FacebookPostWidget::unFavIcon(Choqok::MediaManager::convertToGraySca
 
 FacebookPostWidget::FacebookPostWidget(Choqok::Account* account, Choqok::Post* post, QWidget* parent): PostWidget(account, post, parent)
 {
-   updateUserLike();
+	if(!isNotification())
+	{
+	  updateUserLike();
+    }
+	else
+	{
+		connect(this, SIGNAL(postReaded()), SLOT(markNotificationAsRead()) );
+	}  
 }
 
 QString FacebookPostWidget::generateSign ()
@@ -67,7 +74,7 @@ QString FacebookPostWidget::generateSign ()
 		 if (post->author.realName.isEmpty())
 			ss += "Anonymous";
 		else
-			ss += post->author.realName;
+			ss += removeTags(post->author.realName);
 		ss += "</a> - ";
 		ss += isOwnPost() ? "" : "</b>";
 		ss +=  "via";
@@ -80,12 +87,12 @@ QString FacebookPostWidget::generateSign ()
 	 + currentPost().creationDateTime.toString(Qt::DefaultLocaleLongDate) + "\">%1</a>";*/
     
     if( !post->appId.isEmpty())
-        ss += " <b> <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + post->appName + "</a></b> ";
+        ss += " <b> <a href=\"http://www.facebook.com/apps/application.php?id=" + post->appId.toString() + "\">" + removeTags(post->appName) + "</a></b> ";
     else
 	    ss += " <b>web</b> ";	
-
+    QString link = (isNotification() ? post->link : currentAccount()->microblog()->postUrl(currentAccount(), post->author.userName, post->postId));
     ss += ", <a href='"
-	 + currentAccount()->microblog()->postUrl(currentAccount(), post->author.userName, post->postId)
+	 + link
  	 + "' title='"
 	 + post->creationDateTime.toString(Qt::DefaultLocaleLongDate) + "'>%1</a>";	
     return ss;
@@ -113,6 +120,9 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
     
     //status += post->likeCount + " , " + post->commentCount + " <br/> ";
     
+    if( !wallStory.isEmpty() )
+        status += "<b>" + wallStory + "</b> <br/> ";
+        
     if( !story.isEmpty() )
         status += "<b>" + story + "</b> <br/> ";
     if( !link.isEmpty() )
@@ -133,7 +143,7 @@ QString FacebookPostWidget::prepareStatus( const QString &txt )
 	  QUrl iconUrl(iconUrlString);
 	  //status += QString("<br/>Host - %1, Path - %2<br/>").arg(iconUrl.host()).arg(iconUrl.path());
 	  
-	  /// Application Images and Images Outside Fb have to be dealt with seperately because Choqok::MediaManager cant download imaged from encoded URLS (huh)
+	  /// Application Images and Images Outside Fb have to be dealt with seperately because Choqok::MediaManager cant download images from encoded URLS (huh)
 	  if (iconUrl.host().contains("www.facebook.com") && iconUrl.path().contains("app_full_proxy.php"))
 	  {
 		  iconUrlString = QUrl::fromPercentEncoding(iconUrl.queryItemValue("src").toAscii());
@@ -198,6 +208,8 @@ void FacebookPostWidget::slotImageFetched(const QString& linkUrl, const QPixmap&
         pix = pixmap.scaledToHeight(200);
    
    Choqok::UI::PostWidget::mainWidget()->document()->addResource(QTextDocument::ImageResource, imgUrl, pix);
+   
+   updateUi();
    
    //Choqok::NotifyManager::error(linkUrl, i18n("iconUrlString"));
    /*QString content = currentPost()->content;
@@ -267,56 +279,31 @@ void FacebookPostWidget::initUi()
 {
     Choqok::UI::PostWidget::initUi();
     
-    KPushButton *btnLike = addButton( "btnLike",i18nc( "@info:tooltip", "Like" ), "rating" );
-    KPushButton *btnViewLikes = addButton( "btnViewLikes",i18nc( "@info:tooltip", "View Likes on this post" ), "" );
-    KPushButton *btnComment = addButton( "btnComment",i18nc( "@info:tooltip", "Comment" ), "edit-undo" );
-    KPushButton *btnViewComments = addButton( "btnViewComments",i18nc( "@info:tooltip", "View Comments on this post" ), "" );
+    if( ! isNotification() )
+    {
+		KPushButton *btnLike = addButton( "btnLike",i18nc( "@info:tooltip", "Like" ), "rating" );
+		KPushButton *btnViewLikes = addButton( "btnViewLikes",i18nc( "@info:tooltip", "View Likes on this post" ), "" );
+		KPushButton *btnComment = addButton( "btnComment",i18nc( "@info:tooltip", "Comment" ), "edit-undo" );
+		KPushButton *btnViewComments = addButton( "btnViewComments",i18nc( "@info:tooltip", "View Comments on this post" ), "" );
 
-    updateLikeAndCommentCounts();
-    
-    updateFavStat();
-    
-    connect ( btnLike , SIGNAL(clicked(bool)), SLOT(slotLike()) );
-    connect ( btnViewLikes, SIGNAL( clicked(bool)), SLOT(slotViewLikes()) );
-    connect ( btnComment, SIGNAL(clicked(bool)), SLOT(slotComment()) );
-    connect ( btnViewComments, SIGNAL(clicked(bool)), SLOT(slotViewComments()) );
-    
-    /*KMenu menu ;
-    menu.addAction(btnComment);
-    menu.addAction(btnLike);
-
-    KAction *actRep = new KAction(KIcon("edit-undo"), i18n("Reply to %1", currentPost()->author.userName), menu);
-    menu->addAction(actRep);
-    connect( actRep, SIGNAL(triggered(bool)), SLOT(slotReply()) );
-    connect( btnRe, SIGNAL(clicked(bool)), SLOT(slotReply()) );
-
-    KAction *actWrite = new KAction( KIcon("document-edit"), i18n("Write to %1", currentPost()->author.userName),
-                                     menu );
-    menu->addAction(actWrite);
-    connect( actWrite, SIGNAL(triggered(bool)), SLOT(slotWriteTo()) );
-
-    if( !currentPost()->isPrivate ) {
-        KAction *actReplytoAll = new KAction(i18n("Reply to all"), menu);
-        menu->addAction(actReplytoAll);
-        connect( actReplytoAll, SIGNAL(triggered(bool)), SLOT(slotReplyToAll()) );
+		updateLikeAndCommentCounts();
+		
+		updateFavStat();
+		
+		connect ( btnLike , SIGNAL(clicked(bool)), SLOT(slotLike()) );
+		connect ( btnViewLikes, SIGNAL( clicked(bool)), SLOT(slotViewLikes()) );
+		connect ( btnComment, SIGNAL(clicked(bool)), SLOT(slotComment()) );
+		connect ( btnViewComments, SIGNAL(clicked(bool)), SLOT(slotViewComments()) );
     }
 
-    menu->setDefaultAction(actRep);
-    btnRe->setDelayedMenu(menu);
-
-    if( !currentPost()->isPrivate ) {
-        d->btnFav = addButton( "btnFavorite",i18nc( "@info:tooltip", "Favorite" ), "rating" );
-        d->btnFav->setCheckable(true);
-        connect( d->btnFav, SIGNAL(clicked(bool)), SLOT(setFavorite()) );
-        updateFavStat();
-    }*/
 }
 
 void FacebookPostWidget::updateUi()
 {
 	Choqok::UI::PostWidget::updateUi();
 	
-	updateLikeAndCommentCounts();
+	if ( ! isNotification() )
+	  updateLikeAndCommentCounts();
 }
 
 void FacebookPostWidget::updateUserLike()
@@ -478,17 +465,18 @@ void FacebookPostWidget::slotViewLikes()
 void FacebookPostWidget::slotComment()
 {
 	setReadWithSignal();
-	FacebookCommentDialog* dialog = new FacebookCommentDialog(this);
-	connect (dialog, SIGNAL(commented(QString&)), this ,SLOT(commented(QString&)));
+	FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+	FacebookInputDialog* dialog = new FacebookInputDialog(acc,"Enter text for your comment below", "Comment on the Post", "Enter comment and press return or click OK", true, this);
+	connect (dialog, SIGNAL( inputEntered(FacebookAccount*, QString)), this ,SLOT( commented(FacebookAccount*, QString)));
 	dialog->show();
 }
 
-void FacebookPostWidget::commented(QString& message)
+void FacebookPostWidget::commented(FacebookAccount* theAccount, QString message)
 {
 	QString postId = currentPost()->postId;
 	QString path = QString("/%1/comments").arg(postId);
 	
-	FacebookAccount * acc = qobject_cast<FacebookAccount *> (currentAccount());
+	FacebookAccount * acc = theAccount;
 	
 	FacebookJob * job = new FacebookAddJob(path, acc->accessToken());;
 	
@@ -497,6 +485,7 @@ void FacebookPostWidget::commented(QString& message)
     connect( job, SIGNAL(result(KJob*)), this, SLOT(slotCommented(KJob*)) );
     
     job->start();
+    
 }
 
 void FacebookPostWidget::slotCommented(KJob* job)
@@ -640,4 +629,36 @@ bool FacebookPostWidget::isOwnPost()
 {
 	FacebookAccount* account = qobject_cast<FacebookAccount*>(currentAccount());
 	return account->id().compare( currentPost()->author.userId, Qt::CaseInsensitive ) == 0;
+}
+
+bool FacebookPostWidget::isNotification()
+{
+	return currentPost()->type.compare("notification") == 0;
+}
+
+
+void FacebookPostWidget::markNotificationAsRead()
+{
+	if (isNotification() )
+	{
+		FacebookAccount* acc = qobject_cast<FacebookAccount*>(currentAccount());
+		
+		NotificationsMarkReadJob* job = new NotificationsMarkReadJob(currentPost()->postId, acc->accessToken());
+		connect(job, SIGNAL(result(KJob*)), this, SLOT(slotMarkNotificationAsRead(KJob*)) );
+		job->start();
+	}
+}
+
+void FacebookPostWidget::slotMarkNotificationAsRead(KJob* job)
+{
+	if ( !job-> error() || job->error() == KJob::UserDefinedError   )
+	{
+		Choqok::UI::PostWidget::setRead(true);
+		Choqok::NotifyManager::success(i18n("Notification  Marked As Read"));
+	}
+	
+	else 
+	{
+		Choqok::NotifyManager::error(job->errorString(), i18n("Failed to Mark Notification As Read"));
+	}
 }

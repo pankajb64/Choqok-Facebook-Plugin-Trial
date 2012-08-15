@@ -206,7 +206,7 @@ protected:
     virtual bool isResendAvailable() ;
     virtual bool isRemoveAvailable() ;
     virtual bool isOwnPost();
-    
+    virtual QString removeTags(const QString& text) const;
     /**
     @brief Create and Add a new button to widget
     This function will add button to UI!

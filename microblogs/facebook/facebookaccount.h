@@ -43,6 +43,8 @@ public:
     virtual QString name() const;
     virtual void setId(const QString& id);
     virtual QString id() const;
+    virtual QStringList timelineNames() const;
+    virtual void setTimelineNames(const QStringList& list);
     virtual void writeConfig();
     
 	

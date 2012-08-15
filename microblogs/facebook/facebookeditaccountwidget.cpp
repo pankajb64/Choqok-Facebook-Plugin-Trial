@@ -43,7 +43,7 @@ along with this program; if not, see http://www.gnu.org/licenses/
 #include <kfacebook/userinfojob.h>
 #include <notifymanager.h>
 
-FacebookEditAccountWidget::FacebookEditAccountWidget(FacebookMicroBlog *microblog, FacebookAccount* account, QWidget* parent) : ChoqokEditAccountWidget(account, parent), mAccount(account)
+FacebookEditAccountWidget::FacebookEditAccountWidget(FacebookMicroBlog *microblog, FacebookAccount* account, QWidget* parent) : ChoqokEditAccountWidget(account, parent), mBlog(microblog), mAccount(account)
 {
     setupUi(this);
     
@@ -76,7 +76,7 @@ FacebookEditAccountWidget::FacebookEditAccountWidget(FacebookMicroBlog *microblo
         setAccount( mAccount = new FacebookAccount(microblog, newAccountAlias) );
         kcfg_alias->setText( newAccountAlias );
     }
-    //loadTimelinesTableState();
+    loadTimelinesTableState();
     kcfg_alias->setFocus(Qt::OtherFocusReason);
 }
 
@@ -98,6 +98,8 @@ void FacebookEditAccountWidget::showAuthenticationDialog()
               << "user_notes"
 	      << "read_stream";*/
   permissions << "read_stream"
+		  << "publish_stream"
+		  << "manage_notifications"	
 	      << "user_birthday"
 	      <<"user_religion_politics"
 	      << "user_relationships"
@@ -158,25 +160,20 @@ void FacebookEditAccountWidget::authenticationCancelled()
 
 void FacebookEditAccountWidget::authenticationDone(const QString& accessToken)
 {
-  /*if ( mAccount->accessToken() != accessToken && !accessToken.isEmpty() ) {
-    mTriggerSync = true;
-  }*/
+
   mAccount->setAccessToken( accessToken );
   token = accessToken;
   apply();
   kDebug() << "Access Token is :" << mAccount->accessToken() <<" , i.e. " <<accessToken;
   setAuthenticated(true);
-  //updateAuthenticationWidgets();
   updateUserName();
 }
 
 void FacebookEditAccountWidget::updateUserName()
 {
-  //if (mAccount->username().isEmpty() && ! mAccount->accessToken().isEmpty() ) {
     UserInfoJob *  job = new UserInfoJob( mAccount->accessToken() );
     connect( job, SIGNAL(result(KJob*)), this, SLOT(userInfoJobDone(KJob*)) );
     job->start();
-  //}
 }
 
 void FacebookEditAccountWidget::userInfoJobDone( KJob* job )
@@ -214,8 +211,7 @@ Choqok::Account* FacebookEditAccountWidget::apply()
     mAccount->setAlias(kcfg_alias->text());
     //mAccount->setUsername( username );
     mAccount->setAccessToken( token );
-    //mAccount->setUsingOAuth(true);
-    //saveTimelinesTableState();
+    saveTimelinesTableState();
     mAccount->writeConfig();
     return mAccount;
 }
@@ -238,16 +234,10 @@ void FacebookEditAccountWidget::setAuthenticated(bool authenticated)
         kcfg_authenticateLed->off();
         kcfg_authenticateStatus->setText(i18n("Not Authenticated"));
     }
-    QString s = QString("Authenticated with id - %1, username - %2, name - %3").arg(mAccount->id()).arg(mAccount->username()).arg(mAccount->name());
-    
-    Choqok::NotifyManager::error(s, i18n("Success"));
 }
 
-/*void FacebookEditAccountWidget::getPinCode()
-{
-  
-}*/
-/*
+
+
 void FacebookEditAccountWidget::loadTimelinesTableState()
 {
     foreach(const QString &timeline, mAccount->microblog()->timelineNames()){
@@ -272,10 +262,12 @@ void FacebookEditAccountWidget::saveTimelinesTableState()
     }
     timelines.removeDuplicates();
     mAccount->setTimelineNames(timelines);
+    mAccount->writeConfig();
+    mBlog->updateTimelines(mAccount);
 }
 
 
-*/
+
 
 QString FacebookEditAccountWidget::apiKey() 
 {

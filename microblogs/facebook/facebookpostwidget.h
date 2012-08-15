@@ -24,6 +24,7 @@
 #ifndef FACEBOOKPOSTWIDGET_H
 #define FACEBOOKPOSTWIDGET_H
 #include <postwidget.h>
+#include "facebookaccount.h"
 #include "facebookpost.h"
 #include <KJob>
 
@@ -60,7 +61,9 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     virtual void slotUpdateCommentCount(KJob* job);
     virtual void slotUpdateCommentString(KJob* job);
     virtual void slotUpdateUserLike(KJob* job);
-    void commented(QString& message);
+    virtual void markNotificationAsRead();
+    virtual void slotMarkNotificationAsRead(KJob* job);
+    void commented(FacebookAccount* theAccount, QString message);
     
     protected:	
     virtual QString generateSign ();
@@ -80,12 +83,15 @@ class FacebookPostWidget : public Choqok::UI::PostWidget {
     virtual void updateUserLike();
     virtual void reloadLikesAndComments();
     virtual bool isOwnPost();
-    
+    virtual bool isNotification();
+
     static const KIcon unFavIcon;
     
     private:
     
     QString prepareLink (QString& link, QString& title, QString& caption, QString& description, QString& type ) const;
     QString likeUrl;
+    QString wallStory;
+
 };
 #endif

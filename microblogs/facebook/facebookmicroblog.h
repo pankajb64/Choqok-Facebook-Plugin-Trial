@@ -27,8 +27,10 @@
 #include <kfacebook/facebookjobs.h>
 #include <kfacebook/postinfo.h>
 #include <kfacebook/userinfo.h>
+#include <kfacebook/notificationinfo.h>
 #include "facebookpost.h"
-
+#include <QStringList>
+#include "facebookinputdialog.h"
 
 using namespace KFacebook;
 
@@ -54,9 +56,14 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual QList< Choqok::Post* > loadTimeline(Choqok::Account* account, const QString& timelineName);
     virtual Choqok::Account* createNewAccount(const QString& alias);
     virtual void updateTimelines(Choqok::Account* theAccount);
+    virtual void requestTimeline(Choqok::Account* theAccount, QString timelineName, QString sinceTime);
+    virtual void requestNotification(Choqok::Account* theAccount);
     virtual Choqok::TimelineInfo* timelineInfo(const QString& timelineName);
+    virtual void setTimelineInfos();
+    virtual void setUserTimelines(FacebookAccount* theAccount, const QStringList& lists);
     virtual void aboutToUnload();
     virtual QList <Choqok::Post * > toChoqokPost(FacebookAccount* account, PostInfoList mPosts) const;
+    virtual QList <Choqok::Post * > toChoqokPost(FacebookAccount* account, NotificationInfoList notifications) const;
     virtual Choqok::User toChoqokUser(FacebookAccount* account, UserInfoPtr userInfo) const;
     virtual QString profileUrl(Choqok::Account* account, const QString& username) const;
     virtual QString postUrl(Choqok::Account* account, const QString& username, const QString& postId) const;
@@ -64,23 +71,26 @@ class FacebookMicroBlog : public Choqok::MicroBlog
     virtual uint postCharLimit() const;
     void createPostWithAttachment(Choqok::Account *theAccount, Choqok::Post *post, const QString &mediumToAttach = QString());
     virtual QMenu* createActionsMenu(Choqok::Account* theAccount, QWidget* parent = Choqok::UI::Global::mainWindow());
-    //virtual QString prepareStatus(const FacebookPost * post) const;
+    
 
-  /*Q_SIGNALS:
-    virtual void timelineDataReceived(Choqok::Account *theAccount, const QString &timelineName, QList<Choqok::Post*> data );*/
-
-/*protected:
-    virtual QString createLikeString(const FacebookAccount* account, const LikeInfoPtr likes) const;
-    virtual QString createCommentString(const FacebookAccount* account, const CommentInfoPtr comments) const;	
-  */ 	
+  
 protected  slots :
   void slotCreatePost(KJob* job);
   void slotTimeLineLoaded(KJob *job);
+  void slotNotificationLoaded(KJob* job);
   virtual void showPrivateMessageDialog( FacebookAccount *theAccount = 0, const QString &toUsername = QString() );
+  virtual void showAddTimelineDialog(FacebookAccount *theAccount=0, const QString &toUsername=QString());
+  virtual void slotInputEntered(FacebookAccount *theAccount, QString id);
+  virtual void userInfoJobDone(KJob* job);
   
   private:
      QMap<KJob*, FacebookAccount*> mJobsAccount;
      QMap<KJob*, Choqok::Post*> mJobsPost;
-    
+     QMap<QString, Choqok::TimelineInfo*> mTimelineInfos;//timelineName, Info
+     QHash< Choqok::Account*, QMap<QString, QString> > mTimelineUpdateTime;//TimelineType, UpdateTime
+     QMap<KJob*, QString> mJobsTimeline;
+     int countOfTimelinesToSave;
+     FacebookInputDialog* dialog;
+     
 };   
 #endif

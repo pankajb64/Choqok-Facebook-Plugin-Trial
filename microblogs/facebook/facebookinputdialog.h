@@ -26,30 +26,36 @@
 
 #include <KDialog>
 #include <QLabel>
-#include <KTextEdit>
+#include <KLineEdit>
 #include <KPushButton>
+#include "facebookaccount.h"
 
-class FacebookCommentDialog : public KDialog
+class FacebookInputDialog : public KDialog
 {
 	Q_OBJECT
 	
 	
 	public:
-	  FacebookCommentDialog (QWidget* parent=0);
+	  FacebookInputDialog (FacebookAccount* theAccount,  QString labelText, QString captionText=QString(), QString placeholderText=QString(), bool closewithSignal=false, QWidget* parent=0);
 	
 	Q_SIGNALS:
-	  void commented(QString&);
+	  void inputEntered(FacebookAccount*, QString);
 	
 	protected slots:
-	  void slotClicked();
+	  void slotSubmitInput();
 	      
 	protected:
 	  void initUi();
 	  
     private:
       QLabel* label;
-      KTextEdit* textEdit;
+      KLineEdit* lineEdit;
       KPushButton* button;
+      bool mCloseWithSignal;
+      QString mLabelText;
+      QString mCaptionText;
+      QString mPlaceholderText;
+      FacebookAccount* mAccount;
 };
 
 #endif

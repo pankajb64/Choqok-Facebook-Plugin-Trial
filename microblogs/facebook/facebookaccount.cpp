@@ -25,12 +25,14 @@
 #include "facebookmicroblog.h"
 #include <KDebug>
 #include <kfacebook/userinfojob.h>
+
 class FacebookAccount::Private
 {
 public:
     QString accessToken;
     QString id;
     QString name;
+    QStringList timelineNames;
 };
 
 FacebookAccount::FacebookAccount(FacebookMicroBlog* parent, const QString& alias) : Account(parent, alias), d(new Private)
@@ -38,7 +40,24 @@ FacebookAccount::FacebookAccount(FacebookMicroBlog* parent, const QString& alias
     kDebug()<<alias;
    d->accessToken = configGroup()->readEntry("AccessToken", QString());
    d->id = configGroup()->readEntry("Id", QString());
-   d->name = configGroup()->readEntry("Name", QString());	
+   d->name = configGroup()->readEntry("Name", QString());
+   d->timelineNames = configGroup()->readEntry("Timelines", QStringList());	
+   
+   if( d->timelineNames.isEmpty() ){
+        QStringList list = parent->timelineNames();
+        list.removeOne("Profile");
+        d->timelineNames = list;
+    }
+    
+    QStringList lists;
+    
+    foreach(const QString & tm, timelineNames()){
+        if(tm.contains('/'))
+            lists.append(tm);
+    }
+    
+    if(!lists.isEmpty())
+        parent->setUserTimelines(this, lists);
 }    
 
 FacebookAccount::~FacebookAccount()
@@ -51,6 +70,7 @@ void FacebookAccount::writeConfig()
     configGroup()->writeEntry ("AccessToken", d->accessToken);
     configGroup()->writeEntry ("Name", d->name);
     configGroup()->writeEntry ("Id", d->id);
+    configGroup()->writeEntry("Timelines", d->timelineNames);
     Choqok::Account::writeConfig();
     //configGroup()->sync();
     //emit modified(this);
@@ -83,6 +103,20 @@ void FacebookAccount::setId (const QString& id)
 QString FacebookAccount::id() const
 {
   return d->id;
+}
+
+QStringList FacebookAccount::timelineNames() const
+{
+    return d->timelineNames;
+}
+
+void FacebookAccount::setTimelineNames(const QStringList& list)
+{
+    d->timelineNames.clear();
+    foreach(const QString &name, list){
+        if(microblog()->timelineNames().contains(name))
+            d->timelineNames<<name;
+    }
 }
 
 #include "facebookaccount.moc"

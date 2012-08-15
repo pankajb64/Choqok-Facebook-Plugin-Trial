@@ -79,20 +79,17 @@ protected:
     
     virtual void updateUserName();
     
-    //void loadTimelinesTableState();
-    //void saveTimelinesTableState();
-    //virtual void getPinCode();
+    void loadTimelinesTableState();
+    void saveTimelinesTableState();
     void setAuthenticated(bool authenticated);
     bool isAuthenticated;
     bool mTriggerSync;
     FacebookMicroBlog *mBlog;
     FacebookAccount *mAccount;
-    //QProgressBar *progress;
     QString username;
     QString token;
     QString name;
     QString id;
-    //QOAuth::Interface *qoauth;
 
 };
 

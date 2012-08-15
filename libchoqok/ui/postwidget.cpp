@@ -383,8 +383,7 @@ QString PostWidget::prepareStatus( const QString &txt )
 {
     QString text = txt;
 //     text.replace( "&amp;", "&amp;amp;" );
-    text.replace( '<', "&lt;" );
-    text.replace( '>', "&gt;" );
+    text = removeTags(text);
     int pos = 0;
     while(((pos = mUrlRegExp.indexIn(text, pos)) != -1)) {
         QString link = mUrlRegExp.cap(0);
@@ -426,6 +425,15 @@ QString PostWidget::prepareStatus( const QString &txt )
     return text;
 }
 
+QString PostWidget::removeTags(const QString& text) const
+{
+	QString txt(text);
+	
+	txt.replace( '<', "&lt;" );
+    txt.replace( '>', "&gt;" );
+    
+    return txt;
+}
 void PostWidget::setDirection()
 {
     QString txt = d->mCurrentPost->content;

@@ -127,7 +127,7 @@ void FacebookComposerWidget::selectMediumToAttach()
         editorLayout->addWidget(btnCancel, 1, 1);
     }
 
-    mediumName->setText(i18n("Attaching <b>%1</b> mime type - <b>%2</b>", fileName, mimeType));
+    mediumName->setText(i18n("Attaching <b>%1</b> ", fileName));
     editor()->setFocus();
 }
 
